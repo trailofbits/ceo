@@ -49,8 +49,8 @@ $ ./install.sh
 ### Quickstart using a (small) corpus 
 
 ```
-$ wget https://github.com/ggrieco-tob/ceo/releases/download/0.1/corpus.tar.xz
-$ tar -xf corpus
+$ wget https://github.com/ggrieco-tob/ceo/releases/download/0.1/cgc-corpus.tar.xz
+$ tar -xf cgc-corpus.tar.xz
 $ cd corpus
 $ echo /path/to/binary > test.txt
 $ ceo-bin test.txt test
