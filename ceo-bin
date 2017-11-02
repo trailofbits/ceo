@@ -1,0 +1,111 @@
+#!/usr/bin/env python2
+
+from argparse import ArgumentParser
+from sys import argv, exit
+from random import choice
+
+from ceo.boot     import init
+from ceo.testcase import Testcase, load_targets, load_testcases
+from ceo.exploration import explore
+from ceo.test     import test, stats
+from ceo.actions  import MinimizeTestcaseAFL, MinimizeInputsAFL
+from ceo.actions  import init_generators
+from ceo.policy   import TestcasePolicy
+from ceo.labels   import lbls
+from ceo.vectorizer import init_vectorizers
+from ceo.reduce  import reduce_inputs, reduce_testcase
+from ceo.extraction  import get_features
+
+'''
+
+CEO
+
+'''
+
+def parse_arguments():
+    ###########################################################################
+    # parse arguments
+    parser = ArgumentParser(description='')
+
+    parser.add_argument('--cpus', type=int, default=None,
+                        help="Number of CPUs to use")
+
+    parser.add_argument('--features', type=str, default="",
+                        help="")
+
+    parser.add_argument('--options', type=str, default="afl,mcore,grr",
+                        help="")
+
+    parser.add_argument('--storage', type=str, default="ceo",
+                        help="A folder name to store the data.")
+
+    parser.add_argument('targets', type=str,
+                        help="Target file containing one executable program per line")
+
+    parser.add_argument('mode', type=str,
+                        help="Mode (boot/train/test/stats/plot)")
+
+    parsed = parser.parse_args()
+    return parsed
+
+if __name__ == '__main__':
+
+    args = parse_arguments()
+    all_options = ["afl", "mcore", "grr"]
+    mode = args.mode
+    target_filename = args.targets
+    storage_dir = args.storage
+    options = []
+    for option in args.options.split(","):
+        if option in all_options:
+            options.append(option)
+        else:
+            print repr(option),"is invalid."
+            exit(1)
+    
+    #print "[+] Testcases(s) loaded."
+    #print "[+] Initilization storage at "+storage_dir
+
+    if mode == "init":
+        init(options, target_filename, storage_dir)
+        exit(0)
+
+    if mode == "test":
+        test(options, target_filename, storage_dir)
+        exit(0)
+
+    if mode == "stats":
+        stats(options, target_filename, storage_dir)
+        exit(0)
+
+    if mode == "train":
+
+        names, paths = load_targets(target_filename)
+        print "[+] Initilization vectorizer(s) ..."
+        policy = TestcasePolicy(init_vectorizers, init_generators, options)
+        print "[+] Collecting data to train" 
+        for name, path in zip(names, paths):
+            if "afl" in options:
+                reduce_inputs(name+"/inputs", path)
+            testcases = load_testcases([name], [path])
+            tc = choice(testcases)
+            if "afl" in options:
+                tc_min, label = reduce_testcase(tc)
+            else:
+                tc_min = tc
+
+            if len(tc_min) == 0:
+                continue
+
+            if tc_min in policy:
+                print str(tc_min),"exec features already there!"
+                continue
+            else:
+                exec_features = get_features(tc_min)
+
+            labels, param_features = explore(options, tc_min)
+            print tc_min, labels, param_features
+            policy.add(tc_min, exec_features, param_features, labels)
+
+    else:
+        print "[-] Invalid mode!"
