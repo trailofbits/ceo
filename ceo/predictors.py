@@ -5,16 +5,14 @@ from sklearn.svm import SVC
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.metrics import recall_score, confusion_matrix, classification_report
 from imblearn.over_sampling import RandomOverSampler, SMOTE
+
 from ceo.sampling import stratified_shuffle, split_shuffle
 
-
 def train_predictor(progs, x_train, y_train):
-
 
     count = dict()
     for i in range(4):
         count[i] = y_train.count(i)
-        print i, count[i], count[i] / float(len(y_train))
 
     mprogs = []
     mx_train = []
@@ -25,7 +23,7 @@ def train_predictor(progs, x_train, y_train):
             continue
 
         mx_train.append(x)
-        my_train.append("c"+str(label))
+        my_train.append("r"+str(label))
         mprogs.append(prog)
 
     progs = mprogs

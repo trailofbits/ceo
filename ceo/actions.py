@@ -21,7 +21,7 @@ class Action(object):
 
 class Parameters(object):
     '''
-        Abstract class to represent an parameters for an action to execute
+        Abstract class to represent parameters for an action to execute
     ''' 
     pass
 
@@ -112,7 +112,7 @@ class ParametersExploreMCore(object):
         pars = []
         for x in self.policies:
             for y in self.dist_symb_bytes:
-                for z in range(10):
+                for z in range(1,10):
                     pars.append([x, y, z/10.0])
 
         return pars

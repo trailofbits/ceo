@@ -89,14 +89,12 @@ def test(options, target_filename, storage_dir):
                 print "[+] AFL disabled, skipping input minimization" 
                 tc_min = tc
 
-            #tc_min, label = reduce_testcase(tc, "min")
-
             if tc_min in policy:
                 print "[+] Test case already analyzed!"
                 print tc_min
                 continue
 
-            print "[+] Prediction best action for test case:"
+            print "[+] Predicting best action for test case:"
             print tc_min
 
             print "[+] Extracting features"
@@ -105,8 +103,8 @@ def test(options, target_filename, storage_dir):
             print "[+] Finding best predictor"
             res, preds = policy.choice(exec_features)
             for option in options:
-                print "[+] For",option,"the best predictor is:"
+                print "[+] For",option,", the best predictor is:"
                 print preds[option]
                 print "[+] Possible outcomes are:"
                 for param, label in res[option]:
-                    print option, param, label
+                    print param, u'\u2192' , label
