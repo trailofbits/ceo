@@ -7,7 +7,7 @@ from ceo.sampling import shuffle, stratified_shuffle
 from ceo.testcase import Testcase, load_targets, load_testcases
 from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
-from ceo.predictors import eval_rf, eval_svc, eval_knn
+from ceo.predictors import eval_rf, eval_svm, eval_knn
 
 def stats(options, target_filename, storage_dir):
  
@@ -70,14 +70,9 @@ def test(options, target_filename, storage_dir):
     for x, y, files in walk:
         if "fold" in x and x.endswith("/"+storage_dir):
             storages.append(x)
-            #prefixes.append(x)
 
-        #if "fold" in x and target_filename in files:
-        #    prefixes.append(x)
-        #    targetss.append(load_targets(x+"/"+target_filename)) 
 
     policy = MultiPolicy(options, storages)
- 
     for prefix,targets in zip(prefixes, targetss):
         names, paths = targets
         for name, path in zip(names, paths):
@@ -91,6 +86,7 @@ def test(options, target_filename, storage_dir):
             if "afl" in options:
                 tc_min, label = reduce_testcase(tc, "min")
             else:
+                print "[+] AFL disabled, skipping input minimization" 
                 tc_min = tc
 
             #tc_min, label = reduce_testcase(tc, "min")
@@ -100,13 +96,17 @@ def test(options, target_filename, storage_dir):
                 print tc_min
                 continue
 
+            print "[+] Prediction best action for test case:"
             print tc_min
+
+            print "[+] Extracting features"
             exec_features = get_features(tc_min)
             #print exec_features
-            preds = policy.choice(exec_features)
+            print "[+] Finding best predictor"
+            res, preds = policy.choice(exec_features)
             for option in options:
-                for param, label in preds[option]:
+                print "[+] For",option,"the best predictor is:"
+                print preds[option]
+                print "[+] Possible outcomes are:"
+                for param, label in res[option]:
                     print option, param, label
-
-    #for name, path in zip(names, paths)i:
-    #    print name, path

@@ -8,7 +8,7 @@ from sklearn.externals import joblib
 from sklearn.semi_supervised import label_propagation
 
 from ceo.vectorizer import TFIDFVectorizer, CountVectorizer, Sent2VecVectorizer
-from ceo.predictors import train_knn
+from ceo.predictors import train_predictor
 from ceo.labels import lbls
 
 class Policy(object):
@@ -196,10 +196,10 @@ class MultiPolicy(Policy):
         self.storages = list(storages)
         self.options = list(options)
         self.param_generators = None
-        self.exec_features = dict()  # tid -> narray
+        self.exec_features = dict()   # tid -> narray
         self.param_features = dict()  # str -> (tid,pid) -> narray
-        self.labels = dict()    # str -> (tid, pid) -> int
-        self.testcases = dict() # tid -> testcase
+        self.labels = dict()          # str -> (tid, pid) -> int
+        self.testcases = dict()       # tid -> testcase
 
         for x in options:
             self.param_features[x] = dict()
@@ -283,10 +283,12 @@ class MultiPolicy(Policy):
 
     def choice(self, raw_exec_features):
         ret = dict()
+        pred = dict()
 
         for option in self.options:
 
             ret[option] = []
+            progs = []
             X_train = []
             y_train = []
             X_test = []
@@ -296,6 +298,7 @@ class MultiPolicy(Policy):
                 v = self.join_features(option, (tid,pid))
                 X_train.append(v)
                 y_train.append(label)
+                progs.append(self.testcases[tid].target_filename)
                 #params.append(None)
             
             for raw_param_features in self.param_generators[option].enumerate():
@@ -304,20 +307,18 @@ class MultiPolicy(Policy):
                 for i,raw_feature in enumerate(raw_exec_features):
                     row = self.exec_vectorizers[i].transform([raw_feature])
                     features.append(row)
-                #print features
                 features = np.concatenate(features, axis=1).flatten()
-                #print features.shape 
                 X_test.append(features)
-                #.append(lbls['?'])
                 params_test.append(raw_param_features)
            
             
-            clf = train_knn(X_train, y_train)
+            clf = train_predictor(progs, X_train, y_train)
             results = clf.predict(X_test)
+            pred[option] = clf
              
             for i,label in enumerate(results):
                 ret[option].append((params_test[i], label))
 
-        return ret
+        return (ret, pred)
 
 

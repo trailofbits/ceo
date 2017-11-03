@@ -7,15 +7,52 @@ from sklearn.metrics import recall_score, confusion_matrix, classification_repor
 from imblearn.over_sampling import RandomOverSampler, SMOTE
 from ceo.sampling import stratified_shuffle, split_shuffle
 
-# TODO: train and test with different programs
+
+def train_predictor(progs, x_train, y_train):
+
+
+    count = dict()
+    for i in range(4):
+        count[i] = y_train.count(i)
+        print i, count[i], count[i] / float(len(y_train))
+
+    mprogs = []
+    mx_train = []
+    my_train = []
+
+    for prog, x, label in zip(progs, x_train, y_train):
+        if count[label] <= 10:
+            continue
+
+        mx_train.append(x)
+        my_train.append("c"+str(label))
+        mprogs.append(prog)
+
+    progs = mprogs
+    x_train = mx_train
+    y_train = my_train
+
+    best_score = 0
+    best_pred = None
+
+    evals = [eval_rf, eval_svm, eval_knn]
+    preds = [train_rf, train_svm, train_knn]
+
+    for eval_pred, train_pred in zip(evals, preds):
+        res = eval_pred(progs, x_train, y_train)
+        if res > best_score:
+            best_score = res
+            best_pred = train_pred(x_train, y_train)
+
+    return best_pred
+
 
 def eval_rf(progs, X, labels): 
   
     unique_progs = list(set(progs))
-    print set(labels)
-    #print len(x_test)
+    #print set(labels)
     scores = []
-    for i in range(100):
+    for i in range(40):
 
         progs_train, progs_test = split_shuffle(unique_progs)
 
@@ -35,22 +72,31 @@ def eval_rf(progs, X, labels):
 
         ros = RandomOverSampler()
         x_train, y_train = ros.fit_sample(x_train, y_train)
-        #x_train, y_train, x_test, y_test = stratified_shuffle(X,labels)  
         clf = RandomForestClassifier()
         clf.fit(x_train, y_train)
         result = recall_score(y_test, clf.predict(x_test), average=None)
         scores.extend(result)
-        if i == 0:
-            conf = classification_report(y_test, clf.predict(x_test))
-    return (mean(scores), conf)
+        #if i == 0:
+        #    conf = classification_report(y_test, clf.predict(x_test))
+    
+    return mean(scores) #, conf)
 
-def eval_svc(progs, X, labels):
+def train_rf(x_train, y_train):
+    ros = RandomOverSampler()
+    x_train, y_train = ros.fit_sample(x_train, y_train)
+ 
+    clf = RandomForestClassifier()
+    clf.fit(x_train, y_train)
+
+    return clf
+
+
+
+def eval_svm(progs, X, labels):
  
     unique_progs = list(set(progs))
-    #print len(x_train)
-    #print len(x_test)
     scores = []
-    for i in range(100):
+    for i in range(40):
 
         progs_train, progs_test = split_shuffle(unique_progs)
 
@@ -75,10 +121,19 @@ def eval_svc(progs, X, labels):
         clf.fit(x_train, y_train)
         result = recall_score(y_test, clf.predict(x_test), average=None)
         scores.extend(result)
-        if i == 0:
-            conf = classification_report(y_test, clf.predict(x_test))
+        #if i == 0:
+        #    conf = classification_report(y_test, clf.predict(x_test))
 
-    return (mean(scores), conf)
+    return mean(scores)#, conf)
+
+def train_svm(x_train, y_train):
+    ros = RandomOverSampler()
+    x_train, y_train = ros.fit_sample(x_train, y_train)
+ 
+    clf = SVC()
+    clf.fit(x_train, y_train)
+
+    return clf
 
 
 def train_knn(x_train, y_train):
@@ -93,8 +148,6 @@ def train_knn(x_train, y_train):
 
 def eval_knn(progs, X, labels):
     unique_progs = list(set(progs))
-    #print len(x_train)
-    #print len(x_test)
     scores = []
     for i in range(100):
 
@@ -121,8 +174,8 @@ def eval_knn(progs, X, labels):
         clf.fit(x_train, y_train)
         result = recall_score(y_test, clf.predict(x_test), average=None)
         scores.extend(result)
-        if i == 0:
-            conf = classification_report(y_test, clf.predict(x_test))
+        #if i == 0:
+        #    conf = classification_report(y_test, clf.predict(x_test))
 
-    return (mean(scores), conf)
+    return mean(scores)#, conf)
 
