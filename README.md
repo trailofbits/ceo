@@ -16,7 +16,10 @@ Every time our CRS performs an action with a fixed amount of resources (time or 
 * It produces additional test cases.
 * It finds a crash.
 
-CEO aims to predict which techinque (and parameters) we should use in which test case.
+CEO aims to predict which techinque (and parameters) we should use in which test case as it is illustrated in this overview diagram:
+
+![overview](https://github.com/trailofbits/ceo/blob/master/docs/discovery-overview.png)
+
 
 This repository contains a prototype that will only work with CGC binaries. If you want to test it, you can find a large set of precompiled CGC binaries [here](https://github.com/zardus/cgc-bins).
 
