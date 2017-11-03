@@ -6,12 +6,13 @@ import subprocess
 import hashlib
 
 from manticore import Manticore
-from manticore.features.features import ExecFeatures
+#from manticore.features.features import ExecFeatures
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grrshot_path, grrplay_path, grr_mutators 
 from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
+from ceo.features import ExecFeatures
 
 class Action(object):
     '''
@@ -54,7 +55,7 @@ class FeaturesMCore(Action):
 
         if write != None:
             features.write(write)
-
+  
         return features.get()[1:]
 
 
@@ -216,51 +217,13 @@ class MinimizeInputsAFL(Action):
         self.inputs_path = str(inputs_path)
         self.outputs_path = ".tmp"
         shutil.rmtree(self.outputs_path, True) 
- 
-    """def _parse_output(self, output):
-        #print output
-        for x in output.split("\x1b"):
-            #print repr(x)
-            if "No instrumentation detected" in x:
-                return None
-            if "Target binary times out" in x:
-                return None
-            if "Program exits with a signal" in x:
-                return lbls['found']
-            if "crash" in x:
-                #print repr(x)
-                for y in x.split(" "):
-                    if "crash" in y: 
-                        if  y == "crash=0":
-                            return lbls['?']
-                        else:
-                            print y
-                            return lbls['found']
-        
-        return lbls['?']
-     """
 
     def run(self, procs=1, timeout=600, verbose=0):
-        
-        """
-        exe = aflcmin_path
-        args = ["-i", self.inputs_path, "-o", self.outputs_path, "-Q",
-                "-m", "none", "-t", "5000", "--", self.target_path ]
-        if verbose > 0:
-            print "Executing", exe, " ".join(args)
-        with open(os.devnull, 'wb') as devnull:
-            proc = subprocess.Popen([exe]+args)
-                                    #stdout=devnull,
-                                    #stderr=subprocess.PIPE)
-            output = proc.communicate()[1]
-            ret = proc.returncode
-        """
+
         ret = cmin(self.target_path, self.inputs_path, self.outputs_path)
-        #assert(0)
         if ret:
             shutil.rmtree(self.inputs_path, True) 
             shutil.move(self.outputs_path, self.inputs_path) 
-        #print output
         return None#self._parse_output(output)
         #return (ret == 0) 
 
