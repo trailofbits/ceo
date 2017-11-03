@@ -14,9 +14,9 @@ Every time our CRS performs an action with a fixed amount of resources (time or 
 * It fails to start.
 * It produces no additional test cases.
 * It produces additional test cases.
-* It finds a crash.
+* It finds a valuable test case (e.g, a crash).
 
-CEO aims to predict which techinque (and parameters) we should use in which test case as it is illustrated in this overview diagram:
+CEO aims to predict the techinque (and parameters) we should use in a test case to obtain the desire result. It is illustrated in this overview diagram:
 
 ![overview](https://github.com/trailofbits/ceo/blob/master/docs/discovery-overview.png)
 
@@ -55,7 +55,11 @@ $ ./install.sh
 $ wget https://github.com/ggrieco-tob/ceo/releases/download/0.1/cgc-corpus.tar.xz
 $ tar -xf cgc-corpus.tar.xz
 $ cd corpus
-$ echo /path/to/binary > test.txt
+$ mkdir bins
+$ wget "https://github.com/angr/binaries/blob/master/tests/cgc/PIZZA_00001?raw=true" -O bins/PIZZA_00001
+$ printf "bins/PIZZA_00001" > test.txt
+$ mkdir -p PIZZA_00001/inputs
+$ printf "AAA" > PIZZA_00001/inputs/file
 $ ceo-bin test.txt test
 ```
 ### Training
