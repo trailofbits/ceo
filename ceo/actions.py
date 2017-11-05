@@ -13,6 +13,8 @@ from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures
+from ceo.plugins import FeatureCollector
+from ceo.concrete_execution import make_initial_concrete_state 
 
 class Action(object):
     '''
@@ -26,7 +28,6 @@ class Parameters(object):
     ''' 
     pass
 
-
 class FeaturesMCore(Action):
     '''
         Use Manticore to extract execution features from a particular testcase
@@ -37,12 +38,17 @@ class FeaturesMCore(Action):
         self.input_path = str(input_path)
         self.workspace = str(workspace)
 
-    def run(self, procs=1, timeout=60, verbose=0, write=None):
+    def run(self, procs=1, timeout=60, verbose=1, write=None):
 
-        shutil.rmtree(self.workspace, True) 
-        m = Manticore(self.target_path, workspace_url=self.workspace,  policy="random",  
-                  concrete_data=self.input_path, extract_features=False)
+        shutil.rmtree(self.workspace, True)
 
+        concrete_data = list(open(self.input_path,"r").read())
+        initial_concrete_state = make_initial_concrete_state(self.target_path,
+                                                             concrete_data)
+                                                           
+        m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
+        m.verbosity(verbose) 
+        m.register_plugin(FeatureCollector())
         Manticore.verbosity(verbose)
         features = ExecFeatures()
 
@@ -51,11 +57,11 @@ class FeaturesMCore(Action):
             if random.random() <= 0.05:
                 features.add_insns(state)
             features.add_syscalls_seq(state)
+
         m.run(procs=procs, timeout=timeout)
 
         if write != None:
             features.write(write)
-  
         return features.get()[1:]
 
 
@@ -271,7 +277,7 @@ class MinimizeTestcaseAFL(Action):
                                     stderr=subprocess.PIPE)
             output = proc.communicate()[1]
             ret = proc.returncode
-        #print output
+        print output
         return self._parse_output(output)
         #return (ret == 0) 
 

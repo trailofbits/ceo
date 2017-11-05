@@ -13,7 +13,7 @@ def analyze_insn(insn):
     return r
 
 def mkfeatures_insns(features, state, max_size=128):
-    insns = state.cpu._last_insns
+    insns = state.context["last_insn"] #cpu._last_insns
 
     for insn in insns:
         features.append(analyze_insn(insn))

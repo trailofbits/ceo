@@ -60,7 +60,7 @@ def stats(options, target_filename, storage_dir):
         print "eval knn:", score
         #print report
 
-def test(options, target_filename, storage_dir):
+def test(options, target_filename, storage_dir, verbosity):
  
     storages = []
     targetss = [load_targets(target_filename)]
