@@ -7,4 +7,5 @@ class FeatureCollector(Plugin):
         state.context['last_insn'] = deque([],128)
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
+        #print state.context['last_insn']
         state.context['last_insn'].append(instruction)

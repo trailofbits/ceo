@@ -14,7 +14,11 @@ from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures
 from ceo.plugins import FeatureCollector
 from ceo.concrete_execution import make_initial_concrete_state 
-from ceo.parameters import ParametersExploreAFL, ParamentersExploreMCore, ParametersExploreGrr
+from ceo.symbolic_execution import make_initial_symbolic_state 
+
+from ceo.evm import ManticoreEVM
+
+from ceo.parameters import ParametersExploreAFL, ParametersExploreMCore, ParametersExploreGrr
 
 class Action(object):
     '''
@@ -24,7 +28,7 @@ class Action(object):
 
 class FeaturesMCore(Action):
     '''
-        Use Manticore to extract execution features from a particular testcase
+        Use Manticore to extract execution features from a particular test case
     ''' 
 
     def __init__(self, target_path, input_path, workspace):
@@ -41,9 +45,9 @@ class FeaturesMCore(Action):
                                                              concrete_data)
                                                            
         m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
-        m.verbosity(verbose) 
+        #m.verbosity(verbose) 
         m.register_plugin(FeatureCollector())
-        Manticore.verbosity(verbose)
+        #Manticore.verbosity(verbose)
         features = ExecFeatures()
 
         @m.hook(None)
@@ -57,6 +61,66 @@ class FeaturesMCore(Action):
         if write != None:
             features.write(write)
         return features.get()[1:]
+
+class FeaturesMCoreEVM(Action):
+    '''
+        Use Manticore to extract execution features from a particular smart contract
+    ''' 
+
+    def __init__(self, target_path, input_path, workspace):
+        self.target_path = str(target_path)
+        self.input_path = str(input_path)
+        self.workspace = str(workspace)
+
+    def run(self, procs=1, timeout=60, verbose=1, write=None):
+
+        shutil.rmtree(self.workspace, True)
+
+        bytecode = list(open(self.target_path,"r").read())
+        concrete_data = list(open(self.input_path,"r").read())
+
+        m = ManticoreEVM(workspace_url=self.workspace, policy="random")
+        m.verbosity(verbose) 
+        user_account = m.create_account(balance=1024)
+        contract_account = m.create_contract(owner=user_account,
+                                             balance=0,
+                                             init=bytecode)
+
+
+        def explore(state,pc, instruction):
+            print pc, instruction
+
+        #m.add_hook(None, explore)
+
+        m.register_plugin(FeatureCollector())
+        m.transaction(  caller=user_account,
+                           address=contract_account,
+                           value=None,
+                           data=concrete_data,
+                         )
+
+        #initial_concrete_state = make_initial_concrete_state(self.target_path,
+        #                                                     concrete_data)
+                                                           
+        #m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
+        #m.verbosity(verbose) 
+        #m.register_plugin(FeatureCollector())
+        #Manticore.verbosity(verbose)
+        #features = ExecFeatures()
+
+        #@m.hook(None)
+        #    if random.random() <= 0.05:
+        #        features.add_insns(state)
+        #    features.add_syscalls_seq(state)
+
+        #m.run(procs=procs, timeout=timeout)
+
+        #if write != None:
+        #    features.write(write)
+        #return features.get()[1:]
+
+
+
 
 def copy_and_rename(base, files, dirname):
     #print base, files, dirname
@@ -125,11 +189,16 @@ class ExploreMCore(Action):
 
     def run(self, procs=1, timeout=600, verbose=0):
 
-        shutil.rmtree(self.workspace, True) 
-        m = Manticore(self.target_path, workspace_url=self.workspace,  #policy=self.policy,  
+        shutil.rmtree(self.workspace, True)
+
+        initial_symbolic_state = make_initial_symbolic_state(self.target_path,
+                                                             concrete_data)
+ 
+
+        m = Manticore(initial_symbolic_state, workspace_url=self.workspace, policy=self.policy)  
                       #rand_symb_bytes=self.rand_symb_bytes, dist_symb_bytes=self.dist_symb_bytes,
-                      concrete_data=self.input_path, 
-                      extract_features=False, **self.extra_args)
+                      #concrete_data=self.input_path, 
+                      #extract_features=False, **self.extra_args)
         
         Manticore.verbosity(verbose)
         m.run(procs=procs, timeout=timeout)
@@ -277,14 +346,21 @@ class ExploreAFL(Action):
         exe = "timeout"
         args = [str(timeout), aflfuzz_path, "-i", self.input_dir, "-o", self.output_dir, "-Q",
                 "-m", "none", "-t", "5000", "--", self.target_path ]
-        print "Executing", exe, args
+        if verbose > 0:
+            print "Executing", exe, args
+
         with open(os.devnull, 'wb') as devnull:
             proc = subprocess.Popen([exe]+args,
                                     stdout=devnull,
                                     stderr=subprocess.PIPE)
             output = proc.communicate()[1]
             ret = proc.returncode
-        #print output
+
+        if verbose > 0:
+            print "---"
+            print output
+            print "---"
+ 
         return self._check_output(output)
         #return lbls['?'] #(ret == 0) 
 
@@ -368,6 +444,11 @@ class ExploreGrr(Action):
             if verbose > 0:
                 print "ret", ret
 
+        if verbose > 0:
+            print "---"
+            print output
+            print "---"
+ 
         exe = grrplay_path #"grrplay"
         args = ["--num_exe=1", "--snapshot_dir="+self.workspace, "--nopersist",
                 "--output_snapshot_dir="+self.workspace]
@@ -384,10 +465,16 @@ class ExploreGrr(Action):
             if verbose > 0:
                 print "ret", ret
 
+        if verbose > 0:
+            print "---"
+            print output
+            print "---"
+ 
         exe = "timeout"
         args = ["-k", "1", str(timeout), grrplay_path , "--num_exe=1", "--persist", "--persist_dir="+self.workspace,
                 "--snapshot_dir="+self.workspace,  "--input="+self.input_path, "-print_num_mutations", "--output_dir="+self.output_dir,
                 "--path_coverage", "--remutate", "--input_mutator="+self.extra_args["mutator"]]
+
         if verbose > 0:
             print "Executing", exe, args
 
@@ -400,5 +487,10 @@ class ExploreGrr(Action):
 
             if verbose > 0:
                 print "ret", ret
+
+        if verbose > 0:
+            print "---"
+            print output
+            print "---"
 
         return self._check_output() 

@@ -1,8 +1,11 @@
-from ceo.actions  import FeaturesMCore
+from ceo.actions  import FeaturesMCore, FeaturesMCoreEVM
 
 def get_features(tc, boot=False, verbose=1):
 
-    get_features = FeaturesMCore( tc.target_filepath, tc.input_filepath, tc.target_filename+"/mcore")
+    if tc.target_platform == "evm":
+        get_features = FeaturesMCoreEVM( tc.target_filepath, tc.input_filepath, tc.target_filename+"/evm")
+    else:
+        get_features = FeaturesMCore( tc.target_filepath, tc.input_filepath, tc.target_filename+"/mcore")
     if boot:
        filename = "boot.csv.gz" 
     else:

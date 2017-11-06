@@ -69,7 +69,7 @@ class Testcase(object):
         elif magic == '\x7fCGC':
             # Decree
             self.target_platform = "decree"
-        elif magic == '#EVM':
+        elif magic[:1] == '`':
             # EVM
             self.target_platform = "evm"
         else:

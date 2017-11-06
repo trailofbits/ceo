@@ -65,6 +65,8 @@ if __name__ == '__main__':
     target_filename = args.targets
     storage_dir = args.storage
     verbosity = args.verbose
+    cpus = args.cpus
+
     options = []
     for option in args.options.split(","):
         if option in all_options:
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     #print "[+] Initilization storage at "+storage_dir
 
     if mode == "init":
-        init(options, target_filename, storage_dir, verbose=verbosity)
+        init(options, target_filename, storage_dir, cpus, verbose=verbosity)
         exit(0)
 
     if mode == "test":
