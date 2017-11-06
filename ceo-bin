@@ -9,7 +9,7 @@ from ceo.testcase import Testcase, load_targets, load_testcases
 from ceo.exploration import explore
 from ceo.test     import test, stats
 from ceo.actions  import MinimizeTestcaseAFL, MinimizeInputsAFL
-from ceo.actions  import init_generators
+from ceo.parameters  import init_parameter_generators
 from ceo.policy   import TestcasePolicy
 from ceo.labels   import lbls
 from ceo.vectorizer import init_vectorizers
@@ -37,7 +37,7 @@ def parse_arguments():
                         help="Timeout of the feature extraction")
 
     parser.add_argument('--exploration-timeout', type=int, default=600,
-                        help="Timeout of the exploration")
+                        help="Timeout of the test case exploration")
 
     parser.add_argument('--options', type=str, default="afl,mcore,grr",
                         help="")
@@ -45,7 +45,7 @@ def parse_arguments():
     parser.add_argument('--storage', type=str, default="ceo",
                         help="A folder name to store the data.")
 
-    parser.add_argument('--verbose', type=int, default=1,
+    parser.add_argument('--verbose', type=int, default=0,
                         help="Verbosity level")
 
     parser.add_argument('targets', type=str,
@@ -77,11 +77,11 @@ if __name__ == '__main__':
     #print "[+] Initilization storage at "+storage_dir
 
     if mode == "init":
-        init(options, target_filename, storage_dir)
+        init(options, target_filename, storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "test":
-        test(options, target_filename, storage_dir, verbosity)
+        test(options, target_filename, storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "stats":
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
         names, paths = load_targets(target_filename)
         print "[+] Initilization vectorizer(s) ..."
-        policy = TestcasePolicy(init_vectorizers, init_generators, options)
+        policy = TestcasePolicy(init_vectorizers, init_parameter_generators, options)
         print "[+] Collecting data to train" 
         for name, path in zip(names, paths):
             if "afl" in options:

@@ -6,7 +6,6 @@ import subprocess
 import hashlib
 
 from manticore import Manticore
-#from manticore.features.features import ExecFeatures
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grrshot_path, grrplay_path, grr_mutators 
 from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
@@ -15,16 +14,11 @@ from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures
 from ceo.plugins import FeatureCollector
 from ceo.concrete_execution import make_initial_concrete_state 
+from ceo.parameters import ParametersExploreAFL, ParamentersExploreMCore, ParametersExploreGrr
 
 class Action(object):
     '''
         Abstract class to represent an action to execute
-    ''' 
-    pass
-
-class Parameters(object):
-    '''
-        Abstract class to represent parameters for an action to execute
     ''' 
     pass
 
@@ -63,77 +57,6 @@ class FeaturesMCore(Action):
         if write != None:
             features.write(write)
         return features.get()[1:]
-
-
-class ParametersExploreAFL(object):
-    '''
-        Abstract class to represent an action to execute
-    ''' 
-    def __init__(self):
-        pass
-
-    def sample(self):
-        pars = dict()
-        return pars
-
-    def enumerate(self):
-        return [[]]
-
-class ParametersExploreGrr(object):
-    '''
-        Abstract class to represent an action to execute
-    ''' 
-    def __init__(self):
-        self.mutators = grr_mutators
-    def sample(self):
-        pars = dict()
-        pars["mutator"] = random.choice(self.mutators)
-        return pars
-
-    def enumerate(self):
-        pars = []
-        for x in self.mutators:
-            pars.append([x])
-        return pars
-
-
-
-
-class ParametersExploreMCore(object):
-    '''
-        Abstract class to represent an action to execute
-    ''' 
-    def __init__(self):
-        self.policies = manticore_policies
-        self.dist_symb_bytes = manticore_dist_symb_bytes
-
-    def sample(self):
-        pars = dict()
-        pars["policy"] = random.choice(self.policies)
-        pars["dist_symb_bytes"] = random.choice(self.dist_symb_bytes)
-        pars["rand_symb_bytes"] = round(random.random(),1)
-        return pars
-
-    def enumerate(self):
-
-        pars = []
-        for x in self.policies:
-            for y in self.dist_symb_bytes:
-                for z in range(1,10):
-                    pars.append([x, y, z/10.0])
-
-        return pars
-
-
-def init_generators():
-
-    param_generators = dict()
-    param_generators["afl"] = ParametersExploreAFL()
-    param_generators["mcore"] = ParametersExploreMCore()
-    param_generators["grr"] = ParametersExploreGrr()
- 
-    return param_generators
-
 
 def copy_and_rename(base, files, dirname):
     #print base, files, dirname
@@ -277,7 +200,10 @@ class MinimizeTestcaseAFL(Action):
                                     stderr=subprocess.PIPE)
             output = proc.communicate()[1]
             ret = proc.returncode
-        print output
+        if verbose > 0:
+            print "---"
+            print output
+            print "---"
         return self._parse_output(output)
         #return (ret == 0) 
 
@@ -291,7 +217,7 @@ class ExploreAFL(Action):
     '''
         Use AFL to look for more testcases
     ''' 
-    def __init__(self, target_path, input_path, workspace):
+    def __init__(self, target_path, input_path, extra_args, workspace):
  
         self.target_path = str(target_path)
         self.input_path = str(input_path)
@@ -300,7 +226,12 @@ class ExploreAFL(Action):
         self.input_dir = self.workspace + "/in" #+ str(input_path)
         self.output_dir = self.workspace + "/out" 
         shutil.rmtree(self.workspace, True) 
+
+        self.param_generator = ParametersExploreAFL()
+        if extra_args is None:
+            self.extra_args = self.param_generator.sample() 
  
+
         os.makedirs(self.input_dir)
         os.makedirs(self.output_dir)
         shutil.copy(self.input_path, self.input_dir)

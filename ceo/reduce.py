@@ -2,11 +2,11 @@ from ceo.actions  import MinimizeTestcaseAFL, MinimizeInputsAFL
 from ceo.labels   import lbls
 from ceo.testcase import Testcase
 
-def reduce_inputs(inputs, target_filepath):
+def reduce_inputs(inputs, target_filepath, verbose=1):
     minimize = MinimizeInputsAFL(target_filepath, inputs) 
-    ret = minimize.run()
+    ret = minimize.run(verbose=verbose)
 
-def reduce_testcase(tc, output=None):
+def reduce_testcase(tc, output=None, verbose=1):
     print "[+] Performing input minimization"
     label = lbls['?']
     if output is None:
@@ -16,7 +16,7 @@ def reduce_testcase(tc, output=None):
         tc_min = tc
     else:
         minimize = MinimizeTestcaseAFL( tc.target_filepath, tc.input_filepath, output) 
-        ret = minimize.run()
+        ret = minimize.run(verbose=verbose)
                  
         if ret == None:
             tc_min = tc

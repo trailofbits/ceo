@@ -60,7 +60,7 @@ def stats(options, target_filename, storage_dir):
         print "eval knn:", score
         #print report
 
-def test(options, target_filename, storage_dir, verbosity):
+def test(options, target_filename, storage_dir, verbose=1):
  
     storages = []
     targetss = [load_targets(target_filename)]
@@ -84,7 +84,7 @@ def test(options, target_filename, storage_dir, verbosity):
                 pass
 
             if "afl" in options:
-                tc_min, label = reduce_testcase(tc, "min")
+                tc_min, label = reduce_testcase(tc, "min", verbose=verbose)
             else:
                 print "[+] AFL disabled, skipping input minimization" 
                 tc_min = tc
@@ -98,7 +98,7 @@ def test(options, target_filename, storage_dir, verbosity):
             print tc_min
 
             print "[+] Extracting features"
-            exec_features = get_features(tc_min)
+            exec_features = get_features(tc_min, verbose=verbose)
             #print exec_features
             print "[+] Finding best predictor"
             res, preds = policy.choice(exec_features)

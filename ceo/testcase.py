@@ -59,6 +59,21 @@ class Testcase(object):
         self.input_filepath = str(input_filepath)
         self.input_filename = self.input_filepath.split("/")[-1]
         self.input_data = open(self.input_filepath,"rb").read()
+        self._find_platform()
+
+    def _find_platform(self):
+        magic = file(self.target_filepath).read(4)
+        if magic == '\x7fELF':
+            # Linux
+            self.target_platform = "linux"
+        elif magic == '\x7fCGC':
+            # Decree
+            self.target_platform = "decree"
+        elif magic == '#EVM':
+            # EVM
+            self.target_platform = "evm"
+        else:
+            raise NotImplementedError("Binary {} not supported.".format(self.target_filepath))
 
     def __len__(self):
         return len(self.input_data)
@@ -67,7 +82,7 @@ class Testcase(object):
         return hash((self.target_filename, self.input_data))
  
     def __str__(self):
-        return str((self.target_filename, self.input_filename, self.input_data))
+        return str((self.target_platform, self.target_filename, self.input_filename, self.input_data))
 
     def id(self):
         return hash(self)
