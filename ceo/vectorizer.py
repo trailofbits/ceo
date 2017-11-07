@@ -10,11 +10,12 @@ import gzip
 
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.feature_extraction.text import CountVectorizer as skCountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer #as skTfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer as skTfidfVectorizer
 from sklearn.externals import joblib
 
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grr_mutators 
+from ceo.features import features_list
 
 class Vectorizer:
     '''
@@ -80,14 +81,52 @@ class MCoreParamVectorizer(Vectorizer):
         ret.append(x[2])
         return np.array([ret])
 
+
+class SeriesVectorizer(Vectorizer):
+    def __init__(self):
+        self.ranges = [(0,0)]
+        self.ys = dict()
+        for i in range(31):
+            k = (2**i,2**(i+1))
+            self.ranges.append(k) 
+
+    def fit(self, x):
+        pass
+
+    def transform(self, xss):
+        xs = xss[0]
+        ys = dict()
+        
+        for k in self.ranges:
+            ys[k] = 0
+
+        for x in xs:
+            for (r0,r1) in self.ranges:
+                if x >= r0 and x <= r1:
+                    ys[(r0,r1)] = ys[(r0,r1)] + 1
+
+        v = [0] * len(self.ranges)
+
+        for i,k in enumerate(self.ranges):
+            v[i] = ys[k]
+
+        return np.array([v])
+            
+        
+        
+ 
+
 class TFIDFVectorizer(Vectorizer):
     def __init__(self, ngram_range, max_features, vocabulary=None):
-        self._vectorizer = TfidfVectorizer(ngram_range=ngram_range, max_features=max_features, 
+        self._vectorizer = skTfidfVectorizer(ngram_range=ngram_range, max_features=max_features, 
                                           tokenizer=_tokenizer, lowercase=True,
                                           vocabulary=vocabulary)
 
     def fit_transform(self, x):
         return self._vectorizer.fit_transform(x)
+
+    def fit(self, x):
+        return self._vectorizer.fit(x)
 
     def transform(self, x):
         return self._vectorizer.transform(x).toarray()
@@ -98,6 +137,9 @@ class CountVectorizer(Vectorizer):
 
     def fit_transform(self, x):
         return self._vectorizer.fit_transform(x)
+
+    def fit(self, x):
+        return self._vectorizer.fit(x)
 
     def transform(self, x):
         return self._vectorizer.transform(x).toarray()
@@ -173,40 +215,71 @@ class Sent2VecVectorizer(Vectorizer):
 def init_vectorizers():
     filename = "boot.csv.gz"
 
-    exec_vectorizers = []
+    exec_vectorizers = dict()
     param_vectorizers = dict()
 
     insns_idx = 1
     syscalls_idx = 2
+    reads_idx = 3
+    writes_idx = 4
+    allocs_idx = 5
+    deallocs_idx = 6
 
     #programs = []
     insns = []
     syscalls = []
     csv.field_size_limit(sys.maxsize)
+    raw_features = dict()
+
+    for name in features_list:
+        raw_features[name] = []
 
     with gzip.open(filename, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for row in reader:
             #programs.append(row[program_idx]) 
-            insns.append(row[insns_idx])
-            syscalls.append(row[syscalls_idx]) 
+            raw_features["insns"].append(row[insns_idx])
+            raw_features["syscalls"].append(row[syscalls_idx]) 
+            raw_features["reads"].append(map(int, row[reads_idx].split(","))) 
+            raw_features["writes"].append(map(int, row[writes_idx].split(","))) 
+            raw_features["allocs"].append(map(int, row[allocs_idx].split(","))) 
+            raw_features["deallocs"].append(map(int, row[deallocs_idx].split(","))) 
 
+    #print raw_features
+    #assert(0)
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
 
-    vectorizer_insns = TFIDFVectorizer(ngram_range=(3,3), max_features=500)
-    vectorizer_syscalls = TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
-    vectorizer_afl_params = AFLParamVectorizer()
-    vectorizer_mcore_params = MCoreParamVectorizer()
-    vectorizer_grr_params = GrrParamVectorizer()
+    exec_vectorizers["insns"] = TFIDFVectorizer(ngram_range=(3,3), max_features=500)
+    exec_vectorizers["syscalls"] = TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
+    exec_vectorizers["reads"] = SeriesVectorizer() 
+    exec_vectorizers["writes"] = SeriesVectorizer() 
+    exec_vectorizers["allocs"] = SeriesVectorizer() 
+    exec_vectorizers["deallocs"] = SeriesVectorizer() 
 
-    vectorizer_insns.fit_transform(insns)
-    vectorizer_syscalls.fit_transform(syscalls)
+    exec_vectorizers["insns"].fit(raw_features["insns"])
+    exec_vectorizers["syscalls"].fit(raw_features["syscalls"])
+    exec_vectorizers["reads"].fit(raw_features["reads"])
+    exec_vectorizers["writes"].fit(raw_features["writes"])
+    exec_vectorizers["allocs"].fit(raw_features["allocs"])
+    exec_vectorizers["deallocs"].fit(raw_features["deallocs"])
 
-    param_vectorizers["afl"] = vectorizer_afl_params
-    exec_vectorizers.append(vectorizer_insns)
-    exec_vectorizers.append(vectorizer_syscalls)
+    param_vectorizers["afl"]  = AFLParamVectorizer()
+    param_vectorizers["mcore"] = MCoreParamVectorizer()
+    param_vectorizers["grr"] = GrrParamVectorizer()
 
-    param_vectorizers["mcore"] = vectorizer_mcore_params
-    param_vectorizers["grr"] = vectorizer_grr_params
+    #print raw_features["writes"][0]
+    #print vectorizer_writes.transform(raw_features["writes"][0])
+    #assert(0)
+    
+    #exec_vectorizers.append(vectorizer_insns)
+    #exec_vectorizers.append(vectorizer_syscalls)
+    #exec_vectorizers.append(vectorizer_reads)
+    #exec_vectorizers.append(vectorizer_writes)
+    #exec_vectorizers.append(vectorizer_allocs)
+    #exec_vectorizers.append(vectorizer_deallocs)
+
+    #param_vectorizers["afl"] = vectorizer_afl_params 
+    #param_vectorizers["mcore"] = vectorizer_mcore_params
+    #param_vectorizers["grr"] = vectorizer_grr_params
  
     return exec_vectorizers, param_vectorizers

@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 from argparse import ArgumentParser
-from sys import argv, exit
+from sys import argv, exit, maxint
 from random import choice
 
 from ceo.boot     import init
@@ -15,6 +15,7 @@ from ceo.labels   import lbls
 from ceo.vectorizer import init_vectorizers
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
+from ceo.features import features_list
 
 '''
 
@@ -30,10 +31,13 @@ def parse_arguments():
     parser.add_argument('--cpus', type=int, default=None,
                         help="Number of CPUs to use")
 
+    parser.add_argument('--number', type=int, default=maxint,
+                        help="Number of test cases to analyze")
+
     parser.add_argument('--features', type=str, default="",
                         help="")
 
-    parser.add_argument('--features-timeout', type=int, default=300,
+    parser.add_argument('--extraction-timeout', type=int, default=300,
                         help="Timeout of the feature extraction")
 
     parser.add_argument('--exploration-timeout', type=int, default=600,
@@ -65,21 +69,30 @@ if __name__ == '__main__':
     target_filename = args.targets
     storage_dir = args.storage
     verbosity = args.verbose
+
+    # resource limits
+    extraction_timeout = args.extraction_timeout
+    exploration_timeout = args.exploration_timeout
     cpus = args.cpus
+    nsamples = args.number
+
+    if nsamples <= 0:
+        print "[-] Invalid number of test cases to analyze."
+        exit(1)
 
     options = []
     for option in args.options.split(","):
         if option in all_options:
             options.append(option)
         else:
-            print repr(option),"is invalid."
+            print "[-]", repr(option),"is invalid."
             exit(1)
     
     #print "[+] Testcases(s) loaded."
     #print "[+] Initilization storage at "+storage_dir
 
     if mode == "init":
-        init(options, target_filename, storage_dir, cpus, verbose=verbosity)
+        init(options, target_filename, nsamples, cpus, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "test":
@@ -94,28 +107,35 @@ if __name__ == '__main__':
 
         names, paths = load_targets(target_filename)
         print "[+] Initilization vectorizer(s) ..."
-        policy = TestcasePolicy(init_vectorizers, init_parameter_generators, options)
-        print "[+] Collecting data to train" 
-        for name, path in zip(names, paths):
+        policy = TestcasePolicy(features_list, init_vectorizers, init_parameter_generators, options)
+        print "[+] Collecting data to train"
+ 
+        for _ in range(nsamples):
+            name, path = choice(zip(names, paths))
+            print "[+] Picked up", name
             if "afl" in options:
-                reduce_inputs(name+"/inputs", path)
+                reduce_inputs(name+"/inputs", path, verbose=verbosity)
             testcases = load_testcases([name], [path])
             tc = choice(testcases)
+
             if "afl" in options:
-                tc_min, label = reduce_testcase(tc)
+                tc_min, label = reduce_testcase(tc, verbose=verbosity)
             else:
                 tc_min = tc
 
             if len(tc_min) == 0:
+                print "[+] Discarding empty test case"
                 continue
 
+            print "[+] Randomly selected test case", tc_min, "to explore" 
+ 
             if tc_min in policy:
                 print str(tc_min),"exec features already there!"
                 continue
             else:
                 exec_features = get_features(tc_min)
 
-            labels, param_features = explore(options, tc_min)
+            labels, param_features = explore(options, tc_min, exploration_timeout, verbose=verbosity)
             print tc_min, labels, param_features
             policy.add(tc_min, exec_features, param_features, labels)
 

@@ -1,6 +1,8 @@
 import csv
 import gzip
 
+features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs"]
+
 def analyze_insn(insn):
     if insn is None:
         return "none"
@@ -32,13 +34,13 @@ def mkfeatures_syscalls(state, max_size=128):
 def analyze_allocations(syscall):
     name = syscall[0]
     if name == "_allocate":
-        return syscall[1]
+        return syscall[2]
     return 0
 
 def analyze_deallocations(syscall):
     name = syscall[0]
     if name == "_deallocate":
-        return syscall[1]
+        return syscall[2]
     return 0
 
 def mkfeatures_alloc_dealloc(state):
@@ -127,22 +129,54 @@ class ExecFeatures(Features):
 
         features = self._features 
         rw = features.get("read-write",[(0,0,0)]) 
-        features["read-writes"] = rw + [mkfeatures_reads_writes(state)]
-        ad = features.get("alloc-dealloc",[(0,0,0)]) 
-        features["alloc-dealloc"] = ad + [mkfeatures_alloc_dealloc(state)]
+        x = mkfeatures_reads_writes(state)
+        if x != rw[-1]:
+            features["read-write"] = rw + [x]
+
+        ad = features.get("alloc-dealloc",[(0,0,0)])
+        x = mkfeatures_alloc_dealloc(state)
+        if x != ad[-1]:
+            features["alloc-dealloc"] = ad + [x]
 
     def get(self):
-        row = [self._program]
+        ret = dict()
+
+        ret["program"] = [self._program]
         features = self._features
-        row.append( " ".join(features.get("insns",[])) )
-        row.append( " ".join(features.get("syscalls",[])) )
-        return row
+        ret["insns"] = " ".join(features.get("insns",[])) 
+        ret["syscalls"] = " ".join(features.get("syscalls",[]))
+
+        x = features.get("read-write",[(0,0,0)])
+        reads, writes, ratio = zip(*x)
+
+        ret["reads"] = reads
+        ret["writes"] = writes
+
+        x = features.get("alloc-dealloc",[(0,0,0)])
+        allocs, deallocs, ratio = zip(*x)
+
+        ret["allocs"] = allocs
+        ret["deallocs"] = deallocs
+
+        return ret
  
     def write(self, filename):
         row = [self._program]
         features = self._features
         row.append( " ".join(features.get("insns",[])) )
         row.append( " ".join(features.get("syscalls",[])) )
+
+        x = features.get("read-write",[(0,0,0)])
+        reads, writes, ratio = zip(*x)
+
+        row.append( ",".join(map(str, reads)))
+        row.append( ",".join(map(str, writes)))
+
+        x = features.get("alloc-dealloc",[(0,0,0)])
+        allocs, deallocs, ratio = zip(*x)
+
+        row.append( ",".join(map(str, allocs)))
+        row.append( ",".join(map(str, deallocs)))
 
         with gzip.open(filename, 'a+') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=';')

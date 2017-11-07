@@ -6,13 +6,12 @@ import subprocess
 import hashlib
 
 from manticore import Manticore
-from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grrshot_path, grrplay_path, grr_mutators 
 from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures
-from ceo.plugins import FeatureCollector
+from ceo.plugins import FeatureCollector, FeatureExtractor
 from ceo.concrete_execution import make_initial_concrete_state 
 from ceo.symbolic_execution import make_initial_symbolic_state 
 
@@ -45,22 +44,24 @@ class FeaturesMCore(Action):
                                                              concrete_data)
                                                            
         m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
-        #m.verbosity(verbose) 
-        m.register_plugin(FeatureCollector())
-        #Manticore.verbosity(verbose)
+        m.verbosity(verbose) 
         features = ExecFeatures()
+        m.register_plugin(FeatureCollector(features, 0.05))
+        m.register_plugin(FeatureExtractor())
 
-        @m.hook(None)
-        def explore(state): 
-            if random.random() <= 0.05:
-                features.add_insns(state)
-            features.add_syscalls_seq(state)
+        #Manticore.verbosity(verbose)
+        #@m.hook(None)
+        #def explore(state): 
+        #    if random.random() <= 0.05:
+        #        features.add_insns(state)
+        #    features.add_syscalls_seq(state)
+        #    features.add_syscalls_stats(state)
 
         m.run(procs=procs, timeout=timeout)
 
         if write != None:
             features.write(write)
-        return features.get()[1:]
+        return features.get()
 
 class FeaturesMCoreEVM(Action):
     '''
@@ -182,8 +183,8 @@ class ExploreMCore(Action):
         return lbls['fail']
 
     def save_results(self, input_dir, crash_dir):
-        print self.inputs
-        print self.crashes
+        #print self.inputs
+        #print self.crashes
         copy_and_rename(".", self.inputs, input_dir)
         copy_and_rename(".", self.crashes, crash_dir)
 
@@ -218,12 +219,11 @@ class MinimizeInputsAFL(Action):
 
     def run(self, procs=1, timeout=600, verbose=0):
 
-        ret = cmin(self.target_path, self.inputs_path, self.outputs_path)
+        ret = cmin(self.target_path, self.inputs_path, self.outputs_path, verbose=verbose)
         if ret:
             shutil.rmtree(self.inputs_path, True) 
             shutil.move(self.outputs_path, self.inputs_path) 
-        return None#self._parse_output(output)
-        #return (ret == 0) 
+        return None
 
 class MinimizeTestcaseAFL(Action):
     '''
@@ -312,8 +312,8 @@ class ExploreAFL(Action):
         return features
 
     def save_results(self, input_dir, crash_dir):
-        print self.inputs
-        print self.crashes
+        #print self.inputs
+        #print self.crashes
         copy_and_rename(".", self.inputs, input_dir)
         copy_and_rename(".", self.crashes, crash_dir)
 
@@ -399,8 +399,8 @@ class ExploreGrr(Action):
         return features
 
     def save_results(self, input_dir, crash_dir):
-        print self.inputs
-        print self.crashes
+        #print self.inputs
+        #print self.crashes
         copy_and_rename(".", self.inputs, input_dir)
         copy_and_rename(".", self.crashes, crash_dir)
 
@@ -435,9 +435,9 @@ class ExploreGrr(Action):
             print "Executing", exe, args
 
         with open(os.devnull, 'wb') as devnull:
-            proc = subprocess.Popen([exe]+args)
-                                    #stdout=devnull,
-                                    #stderr=subprocess.PIPE)
+            proc = subprocess.Popen([exe]+args,
+                                    stdout=devnull,
+                                    stderr=subprocess.PIPE)
             output = proc.communicate()[1]
             ret = proc.returncode
 
@@ -449,7 +449,7 @@ class ExploreGrr(Action):
             print output
             print "---"
  
-        exe = grrplay_path #"grrplay"
+        exe = grrplay_path
         args = ["--num_exe=1", "--snapshot_dir="+self.workspace, "--nopersist",
                 "--output_snapshot_dir="+self.workspace]
 
@@ -457,9 +457,9 @@ class ExploreGrr(Action):
             print "Executing", exe, args
 
         with open(os.devnull, 'wb') as devnull:
-            proc = subprocess.Popen([exe]+args)
-                                    #stdout=devnull,
-                                    #stderr=subprocess.PIPE)
+            proc = subprocess.Popen([exe]+args,
+                                    stdout=devnull,
+                                    stderr=subprocess.PIPE)
             output = proc.communicate()[1]
             ret = proc.returncode
             if verbose > 0:
@@ -479,9 +479,9 @@ class ExploreGrr(Action):
             print "Executing", exe, args
 
         with open(os.devnull, 'wb') as devnull:
-            proc = subprocess.Popen([exe]+args)
-                                    #stdout=devnull,
-                                    #stderr=devnull)
+            proc = subprocess.Popen([exe]+args,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
             output = proc.communicate()
             ret = proc.returncode
 

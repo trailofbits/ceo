@@ -1,6 +1,6 @@
 from ceo.actions  import ExploreGrr, ExploreAFL, ExploreMCore
 
-def explore(options, tc, verbose=1):
+def explore(options, tc, timeout, verbose=1):
     print "[+] Exploring testcase ... "
     labels = []
     param_features = []
@@ -10,21 +10,21 @@ def explore(options, tc, verbose=1):
     if "grr" in options:
         explore = ExploreGrr( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/grr")
         param_features.append(("grr", explore.get_features()))
-        label = explore.run(verbose=verbose, timeout=600)
+        label = explore.run(verbose=verbose, timeout=timeout)
         explore.save_results(input_dir, crash_dir)
         labels.append(("grr", label))
 
     if "afl" in options:
         explore = ExploreAFL( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/afl")
         param_features.append(("afl", explore.get_features()))
-        label = explore.run(verbose=verbose, timeout=600)
+        label = explore.run(verbose=verbose, timeout=timeout)
         labels.append(("afl", label))
         explore.save_results(input_dir, crash_dir)
 
     if "mcore" in options:
         explore = ExploreMCore( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/mcore")
         param_features.append(("mcore", explore.get_features()))
-        label = explore.run(verbose=verbose, timeout=600)
+        label = explore.run(verbose=verbose, timeout=timeout)
         labels.append(("mcore", label))
         explore.save_results(input_dir, crash_dir)
    

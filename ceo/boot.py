@@ -9,15 +9,17 @@ from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
 from ceo.storage  import init_storage
 
-def init(options, target_filename, storage_dir, cpus, verbose=1):
+def init(options, target_filename, nsamples, cpus, storage="ceo", verbose=1):
 
-    init_storage(storage_dir)
+    init_storage(storage)
     names, paths = load_targets(target_filename)
     print "[+] Initilization testcases"
     init_testcases(names, paths)
     print "[+] Collecting data to boot"
     print "[+] Available", len(paths), "to execute"
-    for name, path in zip(names, paths):
+
+    for _ in range(nsamples):
+        name, path =  choice(zip(names, paths))
         if "afl" in options:
             print "[+] Performing corpus minimization in", name
             reduce_inputs(name+"/inputs", path, verbose=verbose)
@@ -38,7 +40,7 @@ def init(options, target_filename, storage_dir, cpus, verbose=1):
 
     for i,batch in enumerate(array_split(zip(names, paths), cpus)):
          dirname = "fold-"+str(i)
-         init_storage(dirname + "/" + storage_dir)
+         init_storage(dirname + "/" + storage)
          target_file = dirname+"/" + target_filename
 
          try:

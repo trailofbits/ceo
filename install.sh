@@ -1,3 +1,5 @@
+rm -Rf tools
+
 mkdir -p tools/grr
 cd tools/grr
 git clone https://github.com/ggrieco-tob/grr src
@@ -24,12 +26,12 @@ cd ../../..
 mkdir -p ceo/tools/afl-cgc
 cp -R tools/afl-cgc/bin ceo/tools/afl-cgc
 
-#mkdir -p tools/manticore
-#cd tools/manticore
-#git clone https://github.com/ggrieco-tob/manticore src
-#cd src
-#python2 setup.py install --user
+mkdir -p tools/manticore
+cd tools/manticore
+git clone https://github.com/ggrieco-tob/manticore src
+cd src
+python2 setup.py install --user
 
-#cd ../../..
+cd ../../..
 
 python2 setup.py install --user

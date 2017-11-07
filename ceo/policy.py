@@ -16,9 +16,10 @@ class Policy(object):
     pass
 
 class TestcasePolicy(Policy):
-    def __init__(self, init_vectorizers, init_generators, options, storage="ceo"):
+    def __init__(self, features_list, init_vectorizers, init_generators, options, storage="ceo"):
         self.storage = str(storage)
         self.options = list(options)
+        self.features_list = list(features_list)
         self.param_generators = None
         self.exec_features = dict()  # tid -> narray
         self.param_features = dict()  # str -> (tid,pid) -> narray
@@ -47,12 +48,15 @@ class TestcasePolicy(Policy):
 
     def add_exec_features(self, tc, raw_exec_features):
         features = []
-        for i,raw_feature in enumerate(raw_exec_features):
-            # TODO: check if it is not array first
-            #print i, raw_feature[0:5]
-            row = self.exec_vectorizers[i].transform([raw_feature])
+        #print raw_exec_features
+        for name in self.features_list:
+            exec_vectorizer = self.exec_vectorizers[name]
+            raw_exec_feature = raw_exec_features[name]
+            row = exec_vectorizer.transform([raw_exec_feature])
+            #print row
+            #print name, row.shape
             features.append(row)
-        #print map(lambda x: x.shape, features)
+
         features = np.concatenate(features, axis=1).flatten()
         self.exec_features[hash(tc)] = features
    

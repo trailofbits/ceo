@@ -227,10 +227,10 @@ def dedup(files):
         hashmap[files[i]] = h
     return result, hashmap
 
-def cmin(exe, input_dir, output_dir, debug=0):
+def cmin(exe, input_dir, output_dir, verbose=0):
 
     args = Args()
-    args.debug = debug
+    args.debug = 0
     args.crash_only = False
     args.memory_limit = 'none'
     args.time_limit = 5000
@@ -249,7 +249,8 @@ def cmin(exe, input_dir, output_dir, debug=0):
     init(args)
     files = [os.path.join(dn, fn) for dn in args.input for fn in os.listdir(dn) if not fn.startswith('.')]
     if len(files) == 0:
-        print ('no inputs in the target directory - nothing to be done')
+        if verbose > 0:
+            print ('no inputs in the target directory - nothing to be done')
         return False #sys.exit(1)
     #logger.info('Found %d input files in %d directories', len(files), len(args.input))
 
@@ -260,18 +261,17 @@ def cmin(exe, input_dir, output_dir, debug=0):
         pass
         #logger.info('Skipping file deduplication.')
     
-    #logger.info('Sorting files.')
     files = sorted(files, key=os.path.getsize)
 
     #logger.info('Testing the target binary')
     result = afl_showmap(files[0], args, first=True)
-    #print result
     if result:
-        pass
-        #print 'ok, %d tuples recorded' % len(result)
+        if verbose > 0:
+            print 'ok, %d tuples recorded' % len(result)
     else:
-       print ('no instrumentation output detected') 
-       return False
+        if verbose > 0:
+            print ('no instrumentation output detected') 
+        return False
 
     job_queue = multiprocessing.Queue()
     progress_queue = multiprocessing.Queue()
@@ -337,8 +337,10 @@ def cmin(exe, input_dir, output_dir, debug=0):
         count += 1
 
     if count == 1:
-        print ('all test cases had the same traces, check syntax!')
-    #print ('narrowed down to %s files, saved in "%s"' % (count, args.output))
+        if verbose > 0: 
+            print ('all test cases had the same traces, check syntax!')
+    if verbose > 0:
+        print ('narrowed down to %s files, saved in "%s"' % (count, args.output))
     if not os.environ.get('AFL_KEEP_TRACES'):
         trace_dir = os.path.join(args.output, '.traces')
         shutil.rmtree(trace_dir, ignore_errors=True)
