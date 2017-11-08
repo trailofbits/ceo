@@ -9,7 +9,7 @@ from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.predictors import eval_rf, eval_svm, eval_knn
 
-def stats(options, target_filename, storage_dir):
+def stats(options, target_filename, storage="ceo", verbose=0):
  
     storages = []
     targetss = []
@@ -17,7 +17,7 @@ def stats(options, target_filename, storage_dir):
 
     walk = list(os.walk("."))
     for x, y, files in walk:
-        if "fold" in x and x.endswith("/"+storage_dir):
+        if "fold" in x and x.endswith("/"+storage):
             storages.append(x)
         if "fold" in x and target_filename in files:
             prefixes.append(x)
@@ -48,15 +48,15 @@ def stats(options, target_filename, storage_dir):
             mlabels.append("c"+str(label))
             mprogs.append(prog)
 
-        score, report =  eval_rf(mprogs, mX, mlabels)
+        score =  eval_rf(mprogs, mX, mlabels)
         print "eval rf:", score
         #print report
 
-        score, report =  eval_svc(mprogs, mX, mlabels)    
+        score =  eval_svm(mprogs, mX, mlabels)    
         print "eval svc:", score
         #print report
 
-        score, report = eval_knn(mprogs, mX, mlabels)
+        score = eval_knn(mprogs, mX, mlabels)
         print "eval knn:", score
         #print report
 

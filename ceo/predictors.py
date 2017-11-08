@@ -147,7 +147,7 @@ def train_knn(x_train, y_train):
 def eval_knn(progs, X, labels):
     unique_progs = list(set(progs))
     scores = []
-    for i in range(100):
+    for i in range(40):
 
         progs_train, progs_test = split_shuffle(unique_progs)
 

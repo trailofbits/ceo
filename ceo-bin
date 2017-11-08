@@ -100,7 +100,7 @@ if __name__ == '__main__':
         exit(0)
 
     if mode == "stats":
-        stats(options, target_filename, storage_dir)
+        stats(options, target_filename, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "train":
