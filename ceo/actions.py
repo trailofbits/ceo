@@ -45,9 +45,11 @@ class FeaturesMCore(Action):
                                                            
         m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
         m.verbosity(verbose) 
+        m.plugins = set()
         features = ExecFeatures()
         m.register_plugin(FeatureCollector(features, 0.05))
         m.register_plugin(FeatureExtractor())
+        #m.register_plugin(PCExtractor())
 
         #Manticore.verbosity(verbose)
         #@m.hook(None)

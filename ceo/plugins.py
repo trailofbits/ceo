@@ -17,9 +17,11 @@ class FeatureCollector(Plugin):
         self.rate = rate
         super(FeatureCollector, self).__init__()
 
-    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, prev_pc, next_pc, instruction):
         if random.random() <= self.rate:
             self.features.add_insns(state)
+        
+        self.features.add_visited((prev_pc, next_pc))
         self.features.add_syscalls_seq(state)
         self.features.add_syscalls_stats(state)
 

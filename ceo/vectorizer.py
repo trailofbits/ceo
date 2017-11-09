@@ -13,6 +13,11 @@ from sklearn.feature_extraction.text import CountVectorizer as skCountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer as skTfidfVectorizer
 from sklearn.externals import joblib
 
+import networkx as nx
+import matplotlib as mpl
+#mpl.use('Pdf')
+import matplotlib.pyplot as plt
+
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grr_mutators 
 from ceo.features import features_list
@@ -81,6 +86,33 @@ class MCoreParamVectorizer(Vectorizer):
         ret.append(x[2])
         return np.array([ret])
 
+
+class GraphVectorizer(Vectorizer):
+    def __init__(self):
+        pass
+
+    def fit(self, x):
+        pass
+
+    def transform(self, edgess):
+        edges = edgess[0]
+
+        H = nx.DiGraph()
+
+        for (x,y) in edges:
+            H.add_edge(x,y)
+
+        pos=nx.nx_agraph.graphviz_layout(H)
+        nx.draw(H,pos)
+        plt.show()
+
+        print H.number_of_nodes()
+        print nx.info(H)
+        v = nx.degree_histogram(H)
+        v = v[:16]
+        v = v + [0]*(16-len(v))
+        print v
+        return np.array([v])
 
 class SeriesVectorizer(Vectorizer):
     def __init__(self):
@@ -255,6 +287,7 @@ def init_vectorizers():
     exec_vectorizers["writes"] = SeriesVectorizer() 
     exec_vectorizers["allocs"] = SeriesVectorizer() 
     exec_vectorizers["deallocs"] = SeriesVectorizer() 
+    exec_vectorizers["visited"] = GraphVectorizer()
 
     exec_vectorizers["insns"].fit(raw_features["insns"])
     exec_vectorizers["syscalls"].fit(raw_features["syscalls"])

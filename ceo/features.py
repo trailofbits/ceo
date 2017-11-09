@@ -1,7 +1,7 @@
 import csv
 import gzip
 
-features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs"]
+features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs", "visited"]
 
 def analyze_insn(insn):
     if insn is None:
@@ -107,6 +107,12 @@ class ExecFeatures(Features):
         self._program = None
         self._features = {}
 
+    def add_visited(self, (prev_pc, next_pc)):
+        features = self._features
+        visited = features.get("visited",set())
+        visited.add((prev_pc, next_pc))
+        features["visited"] = visited 
+
     def add_insns(self, state):
         if self._program is None:
             self._program = find_program(state)
@@ -158,6 +164,10 @@ class ExecFeatures(Features):
         ret["allocs"] = allocs
         ret["deallocs"] = deallocs
 
+        x = features.get("visited",set()) 
+        ret["visited"] = x
+        #print x
+ 
         return ret
  
     def write(self, filename):
