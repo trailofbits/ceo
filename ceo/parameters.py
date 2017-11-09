@@ -56,7 +56,7 @@ class ParametersExploreMCore(object):
         pars = dict()
         pars["policy"] = random.choice(self.policies)
         pars["dist_symb_bytes"] = random.choice(self.dist_symb_bytes)
-        pars["rand_symb_bytes"] = round(random.random(),1)
+        pars["rand_symb_bytes"] = max(0.01, round(random.random(),1))
         return pars
 
     def enumerate(self):

@@ -1,6 +1,6 @@
 from ceo.actions  import FeaturesMCore, FeaturesMCoreEVM
 
-def get_features(tc, boot=False, verbose=1):
+def get_features(tc, timeout, boot=False, verbose=1):
 
     if tc.target_platform == "evm":
         get_features = FeaturesMCoreEVM( tc.target_filepath, tc.input_filepath, tc.target_filename+"/evm")
@@ -11,6 +11,6 @@ def get_features(tc, boot=False, verbose=1):
     else:
        filename = None
 
-    return get_features.run(verbose=verbose, timeout=300, write=filename) 
+    return get_features.run(verbose=verbose, timeout=timeout, write=filename) 
 
 

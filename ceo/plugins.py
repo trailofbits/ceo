@@ -23,4 +23,10 @@ class FeatureCollector(Plugin):
         self.features.add_syscalls_seq(state)
         self.features.add_syscalls_stats(state)
 
+class StateCollector(Plugin):
+    def __init__(self, executor):
+        self.executor = executor
+        super(StateCollector, self).__init__()
 
+    def will_fork_state_callback(self, state, expression, solutions, policy):
+        self.executor.generate_testcase(state, "New forked state!")

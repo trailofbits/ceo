@@ -18,14 +18,10 @@ def make_initial_concrete_state(binary_path, concrete_data):
     return state
 
 
-def make_concrete_decree(program, concrete_data, **kwargs):
+def make_concrete_decree(program, concrete_data):
+    assert( concrete_data != '')
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
-    #logger.info('Loading program %s', program)
-
-    #if concrete_data != '':
-    #    logger.info('Starting with concrete input: {}'.format(concrete_data))
     platform.input.transmit(concrete_data)
-    #platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state

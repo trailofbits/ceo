@@ -11,7 +11,7 @@ from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures
-from ceo.plugins import FeatureCollector, FeatureExtractor
+from ceo.plugins import FeatureCollector, FeatureExtractor, StateCollector
 from ceo.concrete_execution import make_initial_concrete_state 
 from ceo.symbolic_execution import make_initial_symbolic_state 
 
@@ -156,6 +156,9 @@ class ExploreMCore(Action):
         features.append(self.extra_args["rand_symb_bytes"])
         return features
 
+    def _parse_txt(self, f):
+        return open(f, "r").read().split("_1:")[1].replace("'","").decode('string_escape')
+
     def _check_output(self, m):
         last_state_id = m._executor._workspace._last_id.value
         print "last_state_id", last_state_id
@@ -163,22 +166,25 @@ class ExploreMCore(Action):
         uri = m._executor._workspace._store.uri
          
         for f in files:
-            filename = uri + '/' + f.replace("messages","stdin")
-            if not os.path.isfile(filename):
-                continue
+            txt_filename = uri + '/' + f.replace("messages","txt") 
+            stdin_filename = uri + '/' + f.replace("messages","stdin")
+
+            if not os.path.isfile(stdin_filename):
+                open(stdin_filename,"w+").write(self._parse_txt(txt_filename))
+
             if "Invalid memory access" in open(uri + "/" + f,"rb").read():
-                self.crashes.append(filename)
+                self.crashes.append(stdin_filename)
             else: 
-                self.inputs.append(filename)
+                self.inputs.append(stdin_filename)
 
         if len(self.crashes) > 0:
             return lbls['found']
 
-        if  len(self.inputs) > 1:
+        if  len(self.inputs) > 0:
             return lbls['new']
 
-        if  len(self.inputs) == 1:
-            return lbls['nothing']
+        #if  len(self.inputs) == 1:
+        #    return lbls['nothing']
 
         return lbls['fail']
 
@@ -191,17 +197,17 @@ class ExploreMCore(Action):
     def run(self, procs=1, timeout=600, verbose=0):
 
         shutil.rmtree(self.workspace, True)
-
+        concrete_data = list(open(self.input_path,"r").read()) 
         initial_symbolic_state = make_initial_symbolic_state(self.target_path,
-                                                             concrete_data)
+                                                             concrete_data,
+                                                             self.extra_args["dist_symb_bytes"],
+                                                             self.extra_args["rand_symb_bytes"])
  
-
-        m = Manticore(initial_symbolic_state, workspace_url=self.workspace, policy=self.policy)  
-                      #rand_symb_bytes=self.rand_symb_bytes, dist_symb_bytes=self.dist_symb_bytes,
-                      #concrete_data=self.input_path, 
-                      #extract_features=False, **self.extra_args)
-        
+        m = Manticore(initial_symbolic_state, workspace_url=self.workspace, policy=self.extra_args["policy"])  
+        #m.plugins = set() 
         Manticore.verbosity(verbose)
+        m.register_plugin(StateCollector(m._executor))
+
         m.run(procs=procs, timeout=timeout)
         return self._check_output(m)
 

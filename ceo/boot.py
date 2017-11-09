@@ -9,7 +9,7 @@ from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
 from ceo.storage  import init_storage
 
-def init(options, target_filename, nsamples, cpus, storage="ceo", verbose=1):
+def init(options, target_filename, nsamples, cpus, timeout, storage="ceo", verbose=1):
 
     init_storage(storage)
     names, paths = load_targets(target_filename)
@@ -33,7 +33,7 @@ def init(options, target_filename, nsamples, cpus, storage="ceo", verbose=1):
         if len(tc_min) == 0:
             continue
 
-        exec_features = get_features(tc_min, boot=True, verbose=verbose)
+        exec_features = get_features(tc_min, timeout, boot=True, verbose=verbose)
 
     if cpus is None: 
         cpus = max(1,cpu_count()-2)

@@ -7,6 +7,14 @@ def explore(options, tc, timeout, verbose=1):
     input_dir = tc.target_filename+"/inputs"
     crash_dir = tc.target_filename+"/crashes"
 
+
+    if "mcore" in options:
+        explore = ExploreMCore( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/mcore")
+        param_features.append(("mcore", explore.get_features()))
+        label = explore.run(verbose=verbose, timeout=timeout)
+        labels.append(("mcore", label))
+        explore.save_results(input_dir, crash_dir)
+ 
     if "grr" in options:
         explore = ExploreGrr( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/grr")
         param_features.append(("grr", explore.get_features()))
@@ -20,14 +28,8 @@ def explore(options, tc, timeout, verbose=1):
         label = explore.run(verbose=verbose, timeout=timeout)
         labels.append(("afl", label))
         explore.save_results(input_dir, crash_dir)
-
-    if "mcore" in options:
-        explore = ExploreMCore( tc.target_filepath, tc.input_filepath, None, tc.target_filename+"/mcore")
-        param_features.append(("mcore", explore.get_features()))
-        label = explore.run(verbose=verbose, timeout=timeout)
-        labels.append(("mcore", label))
-        explore.save_results(input_dir, crash_dir)
-   
+    
+  
     return labels, param_features 
 
 

@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 from sys import argv, exit, maxint
-from random import choice
+from random import seed, choice
 
 from ceo.boot     import init
 from ceo.testcase import Testcase, load_targets, load_testcases
@@ -63,12 +63,15 @@ def parse_arguments():
 
 if __name__ == '__main__':
 
+
     args = parse_arguments()
     all_options = ["afl", "mcore", "grr"]
     mode = args.mode
     target_filename = args.targets
     storage_dir = args.storage
     verbosity = args.verbose
+
+    seed()
 
     # resource limits
     extraction_timeout = args.extraction_timeout
@@ -92,7 +95,7 @@ if __name__ == '__main__':
     #print "[+] Initilization storage at "+storage_dir
 
     if mode == "init":
-        init(options, target_filename, nsamples, cpus, storage=storage_dir, verbose=verbosity)
+        init(options, target_filename, nsamples, cpus, extraction_timeout, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "test":
@@ -110,7 +113,7 @@ if __name__ == '__main__':
         policy = TestcasePolicy(features_list, init_vectorizers, init_parameter_generators, options)
         print "[+] Collecting data to train"
  
-        for _ in range(nsamples):
+        for _ in xrange(nsamples):
             name, path = choice(zip(names, paths))
             print "[+] Picked up", name
             if "afl" in options:
@@ -133,7 +136,7 @@ if __name__ == '__main__':
                 print str(tc_min),"exec features already there!"
                 continue
             else:
-                exec_features = get_features(tc_min)
+                exec_features = get_features(tc_min, extraction_timeout)
 
             labels, param_features = explore(options, tc_min, exploration_timeout, verbose=verbosity)
             print tc_min, labels, param_features
