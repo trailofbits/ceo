@@ -14,9 +14,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer as skTfidfVectorizer
 from sklearn.externals import joblib
 
 import networkx as nx
-import matplotlib as mpl
-#mpl.use('Pdf')
-import matplotlib.pyplot as plt
+#import matplotlib as mpl
+#mpl.use('Agg')
+#import matplotlib.pyplot as plt
 
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grr_mutators 
@@ -101,18 +101,45 @@ class GraphVectorizer(Vectorizer):
 
         for (x,y) in edges:
             H.add_edge(x,y)
+        
+        nnodes = H.number_of_nodes()
 
-        pos=nx.nx_agraph.graphviz_layout(H)
-        nx.draw(H,pos)
-        plt.show()
+        #pos=nx.nx_agraph.graphviz_layout(H)
+        #nx.draw(H)
+        #plt.show()
 
-        print H.number_of_nodes()
-        print nx.info(H)
+        #print H.number_of_nodes()
+        #print nx.info(H)
+        pathlengths=[]
+        for v in H.nodes():
+            spl=nx.single_source_shortest_path_length(H,v)
+            for p in spl.values():
+                pathlengths.append(p)
+
+        dist={}
+        for p in pathlengths:
+            if p in dist:
+                dist[p]+= 1
+            else:
+                dist[p]= 1
+
+        u = [0]*1024
+        if nnodes > 0:
+            for i in range(1024):
+                if i in dist:
+                    u[i] = dist[i] / float(nnodes)
+        #print u 
         v = nx.degree_histogram(H)
-        v = v[:16]
-        v = v + [0]*(16-len(v))
-        print v
-        return np.array([v])
+        v = v[:18]
+        v = v + [0]*(18-len(v))
+        del v[2]
+        del v[0]
+        total = sum(v)
+        if total > 0:
+            for i,x in enumerate(v):
+                v[i] = x / float(total)  
+        #print v
+        return np.array([u+v])
 
 class SeriesVectorizer(Vectorizer):
     def __init__(self):

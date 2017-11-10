@@ -172,6 +172,7 @@ class ExploreMCore(Action):
             stdin_filename = uri + '/' + f.replace("messages","stdin")
 
             if not os.path.isfile(stdin_filename):
+                #if i
                 open(stdin_filename,"w+").write(self._parse_txt(txt_filename))
 
             if "Invalid memory access" in open(uri + "/" + f,"rb").read():
