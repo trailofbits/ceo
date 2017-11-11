@@ -7,7 +7,7 @@ from ceo.sampling import shuffle, stratified_shuffle
 from ceo.testcase import Testcase, load_targets, load_testcases
 from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
-from ceo.predictors import eval_rf, eval_svm, eval_knn
+from ceo.predictors import train_predictor #eval_rf, eval_svm, eval_knn
 
 def stats(options, target_filename, storage="ceo", verbose=0):
  
@@ -23,11 +23,10 @@ def stats(options, target_filename, storage="ceo", verbose=0):
             prefixes.append(x)
             targetss.append(load_targets(x+"/"+target_filename))
 
-    #print targets
-    #options = ["afl", "mcore", "grr"] 
     policy = MultiPolicy(options, storages)
     data = policy.get_data()
 
+    print "[+] Basic stats:"
     for option, (progs, X, labels) in data.items():
         count = dict()
         print option
@@ -35,17 +34,16 @@ def stats(options, target_filename, storage="ceo", verbose=0):
             count[i] = labels.count(i)
             print i, count[i], count[i] / float(len(labels))
 
-        mX = []
-        mlabels = []
-        mprogs = []
-
-
+    for option, (progs, X, labels) in data.items():
+        train_predictor(progs, X, labels)
+   
+        """
         for prog, x, label in zip(progs, X, labels):
             if count[label] <= 10:
                  continue
 
             mX.append(x)
-            mlabels.append("c"+str(label))
+            mlabels.append("r"+str(label))
             mprogs.append(prog)
 
         score =  eval_rf(mprogs, mX, mlabels)
@@ -59,7 +57,7 @@ def stats(options, target_filename, storage="ceo", verbose=0):
         score = eval_knn(mprogs, mX, mlabels)
         print "eval knn:", score
         #print report
-
+        """
 def test(options, target_filename, storage_dir, verbose=1):
  
     storages = []
