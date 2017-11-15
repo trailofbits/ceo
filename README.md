@@ -11,10 +11,9 @@ CEO works collecting data to predict which is the best *action* that a CRS can p
 
 Every time our CRS performs an action with a fixed amount of resources (time or memory), there is one of these results:
 
-* r0: it fails to start.
-* r1: it produces no additional test cases.
-* r2: it produces additional test cases.
-* r3: it finds a valuable test case (e.g, a crash).
+* r0: it fails to start or it produces no new test cases.
+* r1: it produces additional test cases.
+* r2: it finds a valuable test case (e.g, a crash).
 
 CEO aims to predict the techinque (and parameters) we should use in a test case to obtain the desire result. It is illustrated in this overview diagram:
 
@@ -52,7 +51,7 @@ $ ./install.sh
 ### Quickstart using a (small) corpus 
 
 ```
-$ wget https://github.com/ggrieco-tob/ceo/releases/download/0.1/cgc-corpus.tar.xz
+$ wget https://github.com/trailofbits/ceo/releases/download/0.1/cgc-corpus.tar.xz
 $ tar -xf cgc-corpus.tar.xz
 $ cd corpus
 $ mkdir bins
@@ -62,52 +61,6 @@ $ mkdir -p PIZZA_00001/inputs
 $ printf "AAA" > PIZZA_00001/inputs/file
 $ ceo-bin test.txt test
 ```
-
-Then, CEO will output the predictions:
-
-```
-[+] Predicting best action for test case:
-('PIZZA_00001', 'file', 'AAA')
-[+] Extracting features
-[+] Finding best predictor
-[+] For grr, the best predictor is:
-KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',
-           metric_params=None, n_jobs=1, n_neighbors=5, p=2,
-           weights='uniform')
-[+] Possible outcomes are:
-['splice'] → r2
-['splice_chunked'] → r1
-['dropper'] → r2
-['random'] → r1
-['bitflip1'] → r1
-['bitflip2'] → r1
-['bitflip3'] → r2
-['bitflip4'] → r2
-['bitflip5'] → r1
-['bitflip6'] → r2
-['bitflip7'] → r2
-['bitflip8'] → r2
-['bitflip2_2'] → r1
-['bitflip3_2'] → r2
-['bitflip4_2'] → r1
-['bitflip5_2'] → r2
-['bitflip6_2'] → r1
-['bitflip7_2'] → r1
-['bitflip8_2'] → r2
-['bitflip4_4'] → r1
-['bitflip6_4'] → r2
-['bitflip8_4'] → r1
-['bitflip8_8'] → r2
-['inf_bitflip_random'] → r1
-['random'] → r1
-['inf_radamsa_chunked'] → r2
-['inf_radamsa_spliced'] → r1
-['inf_radamsa_concat'] → r1
-['inf_chunked_repeat'] → r2
-...
-```
-
-Using these predictions, we can decide to use GRR with an specific mutator.
 
 ### Training
 
