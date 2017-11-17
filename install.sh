@@ -28,7 +28,7 @@ cp -R tools/afl-cgc/bin ceo/tools/afl-cgc
 
 mkdir -p tools/manticore
 cd tools/manticore
-git clone https://github.com/ggrieco-tob/manticore src
+git clone https://github.com/trailofbits/manticore src
 cd src
 python2 setup.py install --user
 

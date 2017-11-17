@@ -99,11 +99,11 @@ if __name__ == '__main__':
         exit(0)
 
     if mode == "test":
-        test(options, target_filename, storage_dir, verbose=verbosity)
+        test(options, target_filename, cpus, extraction_timeout, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "stats":
-        stats(options, target_filename, storage=storage_dir, verbose=verbosity)
+        stats(options, target_filename, cpus, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "train":

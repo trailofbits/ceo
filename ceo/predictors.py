@@ -10,7 +10,7 @@ from imblearn.over_sampling import RandomOverSampler, SMOTE
 
 from ceo.sampling import stratified_shuffle, split_shuffle
 
-def train_predictor(progs, x_train, y_train):
+def train_predictor(progs, x_train, y_train, cpus, verbose=0):
 
     count = dict()
     for i in range(4):
@@ -33,59 +33,53 @@ def train_predictor(progs, x_train, y_train):
     y_train = my_train
   
     gkf = []
+    clfs = []
+    params = []
+
     for train_index, test_index in GroupKFold( n_splits=50).split(x_train,y_train,progs):
         y = []
         for index in train_index:
             y.append(y_train[index])
 
-        #for i in range(4):
-        #    print i, y.count("r"+str(i)) 
         gkf.append((train_index, test_index))
-
 
     clf = SVC()
     parameters = [
-    # {'C': [0.1, 1, 10, 100, 1000, 10000], 'kernel': ['linear'], 'class_weight':['balanced']},
+    #{'C': [0.1, 1, 10, 100, 1000, 10000], 'kernel': ['linear'], 'class_weight':['balanced']},
     {'C': [0.1, 1, 10, 100, 1000, 10000], 'gamma': [0.1, 0.01, 0.001], 'kernel': ['rbf'], 'class_weight':['balanced']},
     ]
-
-    grid_search = GridSearchCV(clf, parameters, scoring="recall_macro", cv=gkf, n_jobs=1)
-    result = grid_search.fit(x_train, y_train)
-    print result.best_estimator_
-    print result.best_score_
-
+    clfs.append(clf)
+    params.append(parameters) 
+       
     clf = RandomForestClassifier()
     parameters = [{'n_estimators' : [3,5,10]}]
-    grid_search = GridSearchCV(clf, parameters, scoring="recall_macro", cv=gkf, n_jobs=1)
-    result = grid_search.fit(x_train, y_train)
-    print result.best_estimator_
-    print result.best_score_
+
+    clfs.append(clf)
+    params.append(parameters) 
 
     clf = KNeighborsClassifier()
     parameters = [{'n_neighbors':[1,2,3,4,5,6,7]}]
-    grid_search = GridSearchCV(clf, parameters, scoring="recall_macro", cv=gkf, n_jobs=10)
-    result = grid_search.fit(x_train, y_train)
-    print result.best_estimator_
-    print result.best_score_
 
-    """assert(0)
+    clfs.append(clf)
+    params.append(parameters) 
+
     best_score = 0
-    best_pred = None
+    best_estimator = None
 
-    names = ["rf","svm", "knn"]
-    evals = [eval_rf, eval_svm, eval_knn]
-    preds = [train_rf, train_svm, train_knn]
+    for clf, parameters in zip(clfs, params):
 
-    for name_pred, eval_pred, train_pred in zip(names, evals, preds):
-        res = eval_pred(progs, x_train, y_train)
-        #print ""
-        print name_pred, res
-        if res > best_score:
-            best_score = res
-            best_pred = train_pred(x_train, y_train)
+        grid_search = GridSearchCV(clf, parameters, scoring="recall_macro", cv=gkf, n_jobs=cpus)
+        result = grid_search.fit(x_train, y_train)
 
-    return best_pred
-    """
+        if verbose:
+            print result.best_estimator_
+            print result.best_score_
+
+        if result.best_score_ > best_score:
+            best_estimator = result.best_estimator_
+            best_score = result.best_score_
+
+    return best_estimator
 
 def eval_rf(progs, X, labels): 
   

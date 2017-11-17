@@ -9,7 +9,11 @@ from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.predictors import train_predictor #eval_rf, eval_svm, eval_knn
 
-def stats(options, target_filename, storage="ceo", verbose=0):
+def stats(options, target_filename, cpus, storage="ceo", verbose=0):
+
+    # auto CPU selection
+    if cpus is None:
+        cpus = 1
  
     storages = []
     targetss = []
@@ -26,7 +30,7 @@ def stats(options, target_filename, storage="ceo", verbose=0):
     policy = MultiPolicy(options, storages)
     data = policy.get_data()
 
-    print "[+] Basic stats:"
+    print "[+] Fraction of labels collected:"
     for option, (progs, X, labels) in data.items():
         count = dict()
         print option
@@ -35,38 +39,21 @@ def stats(options, target_filename, storage="ceo", verbose=0):
             print i, count[i], count[i] / float(len(labels))
 
     for option, (progs, X, labels) in data.items():
-        train_predictor(progs, X, labels)
-   
-        """
-        for prog, x, label in zip(progs, X, labels):
-            if count[label] <= 10:
-                 continue
+        train_predictor(progs, X, labels, cpus, verbose=1)
 
-            mX.append(x)
-            mlabels.append("r"+str(label))
-            mprogs.append(prog)
+def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 
-        score =  eval_rf(mprogs, mX, mlabels)
-        print "eval rf:", score
-        #print report
-
-        score =  eval_svm(mprogs, mX, mlabels)    
-        print "eval svc:", score
-        #print report
-
-        score = eval_knn(mprogs, mX, mlabels)
-        print "eval knn:", score
-        #print report
-        """
-def test(options, target_filename, storage_dir, verbose=1):
- 
+    # auto CPU selection
+    if cpus is None:
+        cpus = 1
+  
     storages = []
     targetss = [load_targets(target_filename)]
     prefixes = ["."]
 
     walk = list(os.walk("."))
     for x, y, files in walk:
-        if "fold" in x and x.endswith("/"+storage_dir):
+        if "fold" in x and x.endswith("/"+storage):
             storages.append(x)
 
 
@@ -96,10 +83,10 @@ def test(options, target_filename, storage_dir, verbose=1):
             print tc_min
 
             print "[+] Extracting features"
-            exec_features = get_features(tc_min, verbose=verbose)
+            exec_features = get_features(tc_min, extraction_timeout, verbose=verbose)
             #print exec_features
             print "[+] Finding best predictor"
-            res, preds = policy.choice(exec_features)
+            res, preds = policy.choice(exec_features, cpus)
             for option in options:
                 print "[+] For",option,", the best predictor is:"
                 print preds[option]

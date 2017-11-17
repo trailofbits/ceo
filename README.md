@@ -19,7 +19,6 @@ CEO aims to predict the techinque (and parameters) we should use in a test case 
 
 ![overview](https://github.com/trailofbits/ceo/blob/master/docs/discovery-overview.png)
 
-
 This repository contains a prototype that will only work with CGC binaries. If you want to test it, you can find a large set of precompiled CGC binaries [here](https://github.com/zardus/cgc-bins).
 
 ## Requirements
@@ -28,7 +27,7 @@ This repository contains a prototype that will only work with CGC binaries. If y
 * GRR requirements: [gflags](https://github.com/gflags/gflags). 
 * AFL requirements [(with QEMU support!)](https://github.com/ggrieco-tob/afl-cgc/blob/master/qemu_mode/build_qemu_support.sh#L33).
 
-Other required Python packages are: [manticore (my fork)](https://github.com/ggrieco-tob/manticore), 
+Other required Python packages are: 
 [scipy](https://scipy.org/), [scikit-learn](http://scikit-learn.org/) and 
 [imbalanced-learn](http://imbalanced-learn.org) but these are automatically installed
 by our [script](https://github.com/ggrieco-tob/ceo/blob/master/install.sh).

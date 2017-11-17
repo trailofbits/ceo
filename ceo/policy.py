@@ -197,6 +197,8 @@ class TestcasePolicy(Policy):
 
 class MultiPolicy(Policy):
     def __init__(self, options, storages):
+       
+        self.features_list = None 
         self.storages = list(storages)
         self.options = list(options)
         self.param_generators = None
@@ -221,6 +223,7 @@ class MultiPolicy(Policy):
     def _load(self):
         self.storage = self.storages[0]
         self.exec_vectorizers = joblib.load(open(self.storage+'/exec_vectorizers.pkl', 'rb'))
+        self.features_list = self.exec_vectorizers.keys()
         self.param_vectorizers = joblib.load(open(self.storage+'/param_vectorizers.pkl', 'rb'))
         self.param_generators = joblib.load(open(self.storage+'/param_generators.pkl', 'rb'))
 
@@ -285,38 +288,37 @@ class MultiPolicy(Policy):
 
         return ret
 
-    def choice(self, raw_exec_features):
+    def choice(self, raw_exec_features, cpus):
         ret = dict()
         pred = dict()
+        data = self.get_data()
 
         for option in self.options:
 
             ret[option] = []
-            progs = []
-            X_train = []
-            y_train = []
+            progs, X_train, y_train = data[option]
             X_test = []
             params_test = []
 
-            for ((tid,pid),label) in self.labels[option].items():
-                v = self.join_features(option, (tid,pid))
-                X_train.append(v)
-                y_train.append(label)
-                progs.append(self.testcases[tid].target_filename)
-                #params.append(None)
-            
             for raw_param_features in self.param_generators[option].enumerate():
 
                 features = [self.param_vectorizers[option].transform([raw_param_features])]
-                for i,raw_feature in enumerate(raw_exec_features):
-                    row = self.exec_vectorizers[i].transform([raw_feature])
+
+                for name in self.features_list:
+                    exec_vectorizer = self.exec_vectorizers[name]
+                    raw_exec_feature = raw_exec_features[name]
+                    row = exec_vectorizer.transform([raw_exec_feature])
                     features.append(row)
+
+                #for i,raw_feature in enumerate(raw_exec_features):
+                #    row = self.exec_vectorizers[i].transform([raw_feature])
+                #    features.append(row)
                 features = np.concatenate(features, axis=1).flatten()
                 X_test.append(features)
                 params_test.append(raw_param_features)
            
             
-            clf = train_predictor(progs, X_train, y_train)
+            clf = train_predictor(progs, X_train, y_train, cpus)
             results = clf.predict(X_test)
             pred[option] = clf
              
