@@ -14,16 +14,23 @@ class FeatureExtractor(Plugin):
 class FeatureCollector(Plugin):
     def __init__(self, features, rate):
         self.features = features
+        self.last_state = None
         self.rate = rate
         super(FeatureCollector, self).__init__()
 
     def did_execute_instruction_callback(self, state, prev_pc, next_pc, instruction):
         if random.random() <= self.rate:
             self.features.add_insns(state)
+
+        self.features.add_visited((prev_pc, next_pc)) 
+        self.last_state = state
         
-        self.features.add_visited((prev_pc, next_pc))
-        self.features.add_syscalls_seq(state)
-        self.features.add_syscalls_stats(state)
+    def did_finish_run_callback(self):
+        self.features.add_syscalls_seq(self.last_state)
+        self.features.add_syscalls_stats(self.last_state)
+
+
+        #print self.last_state.platform.syscall_trace
 
 class StateCollector(Plugin):
     def __init__(self, executor):

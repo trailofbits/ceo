@@ -67,6 +67,15 @@ def analyze_writes(syscall):
         return len(syscall[2])
     return 0
 
+def extract_transmited(syscall):
+    name = syscall[0]
+    if name == "_transmit":
+        return "".join(syscall[2])
+    return ""
+
+def mkfeatures_transmited(state):
+    return "".join(map(extract_transmited, list(state.platform.syscall_trace)))
+ 
 def mkfeatures_reads_writes(state):
     read_size = sum(map(analyze_reads, list(state.platform.syscall_trace)))
     write_size = sum(map(analyze_writes, list(state.platform.syscall_trace)))
@@ -97,6 +106,26 @@ class Features(object):
     '''
         Abstract class for feature extraction
     ''' 
+
+
+class ParamFeatures(Features):
+    '''
+        Feature extraction from action parameters
+    ''' 
+    def __init__(self, features):
+        self._features = features
+
+    def __hash__(self):
+        return hash(frozenset(self._features.items()))
+
+    def save(self, filename):
+        with gzip.open(filename,'wb') as f:
+            w = csv.DictWriter(f, self._features.keys())
+            w.writeheader()
+            w.writerow(self._features)
+
+    def load(self, filename):
+        assert(0)
 
 class ExecFeatures(Features):
     '''
@@ -133,7 +162,13 @@ class ExecFeatures(Features):
  
     def add_syscalls_stats(self, state):
 
-        features = self._features 
+        features = self._features
+        transmited = features.get("transmited","") 
+        x = mkfeatures_transmited(state)
+        #if x != '':
+        #    print set(x.split("\n"))
+        features["transmited"] = x
+        """
         rw = features.get("read-write",[(0,0,0)]) 
         x = mkfeatures_reads_writes(state)
         if x != rw[-1]:
@@ -143,7 +178,7 @@ class ExecFeatures(Features):
         x = mkfeatures_alloc_dealloc(state)
         if x != ad[-1]:
             features["alloc-dealloc"] = ad + [x]
-
+        """
     def get(self):
         ret = dict()
 
@@ -152,41 +187,49 @@ class ExecFeatures(Features):
         ret["insns"] = " ".join(features.get("insns",[])) 
         ret["syscalls"] = " ".join(features.get("syscalls",[]))
 
-        x = features.get("read-write",[(0,0,0)])
-        reads, writes, ratio = zip(*x)
+        #x = features.get("read-write",[(0,0,0)])
+        #reads, writes, ratio = zip(*x)
 
-        ret["reads"] = reads
-        ret["writes"] = writes
+        #ret["reads"] = reads
+        #ret["writes"] = writes
 
-        x = features.get("alloc-dealloc",[(0,0,0)])
-        allocs, deallocs, ratio = zip(*x)
+        #x = features.get("alloc-dealloc",[(0,0,0)])
+        #allocs, deallocs, ratio = zip(*x)
 
-        ret["allocs"] = allocs
-        ret["deallocs"] = deallocs
+        #ret["allocs"] = allocs
+        #ret["deallocs"] = deallocs
 
         x = features.get("visited",set()) 
         ret["visited"] = x
         #print x
  
         return ret
- 
-    def write(self, filename):
+
+    def load(self, filename):
+        assert(0)
+
+    def save(self, filename):
         row = [self._program]
         features = self._features
         row.append( " ".join(features.get("insns",[])) )
         row.append( " ".join(features.get("syscalls",[])) )
+        #print "Lines transmited:"
+        #lines = []
+        #for line in set(features.get("transmited","").split("\n")):
+        #    if line != "":
+        #        print line
 
-        x = features.get("read-write",[(0,0,0)])
-        reads, writes, ratio = zip(*x)
+        #x = features.get("read-write",[(0,0,0)])
+        #reads, writes, ratio = zip(*x)
 
-        row.append( ",".join(map(str, reads)))
-        row.append( ",".join(map(str, writes)))
+        #row.append( ",".join(map(str, reads)))
+        #row.append( ",".join(map(str, writes)))
 
-        x = features.get("alloc-dealloc",[(0,0,0)])
-        allocs, deallocs, ratio = zip(*x)
+        #x = features.get("alloc-dealloc",[(0,0,0)])
+        #allocs, deallocs, ratio = zip(*x)
 
-        row.append( ",".join(map(str, allocs)))
-        row.append( ",".join(map(str, deallocs)))
+        #row.append( ",".join(map(str, allocs)))
+        #row.append( ",".join(map(str, deallocs)))
 
         with gzip.open(filename, 'a+') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=';')

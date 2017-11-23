@@ -15,185 +15,45 @@ class Policy(object):
     ''' Base class for prioritization '''
     pass
 
-class TestcasePolicy(Policy):
-    def __init__(self, features_list, init_vectorizers, init_generators, options, storage="ceo"):
-        self.storage = str(storage)
+class Storage(object):
+    def __init__(self, path, features_list, options):
+        self.storage = str(path)
         self.options = list(options)
         self.features_list = list(features_list)
-        self.param_generators = None
-        self.exec_features = dict()  # tid -> narray
-        self.param_features = dict()  # str -> (tid,pid) -> narray
-        self.labels = dict()    # str -> (tid, pid) -> int
         self.testcases = dict() # tid -> testcase
-
+        self.labels = dict()    # str -> (tid, pid) -> int
+ 
         for x in options:
-            self.param_features[x] = dict()
             self.labels[x] = dict()
 
-        self.exec_vectorizers = None
-        self.param_vectorizers = None
-        
-        self.predictors = dict()
-        for x in options:
-            self.predictors[x] = label_propagation.LabelSpreading(kernel='knn', alpha=0.2)
-
-        self._load()
-        if (self.exec_vectorizers, self.param_vectorizers) == (None, None):
-            print "[+] Re-creating vectorizers.."
-            self.exec_vectorizers, self.param_vectorizers = init_vectorizers()
-
-        if (self.param_generators == None):
-            print "[+] Re-creating generators.."
-            self.param_generators = init_generators() 
-
-    def add_exec_features(self, tc, raw_exec_features):
-        features = []
-        #print raw_exec_features
-        for name in self.features_list:
-            exec_vectorizer = self.exec_vectorizers[name]
-            raw_exec_feature = raw_exec_features[name]
-            row = exec_vectorizer.transform([raw_exec_feature])
-            #print row
-            #print name, row.shape
-            features.append(row)
-
-        features = np.concatenate(features, axis=1).flatten()
-        self.exec_features[hash(tc)] = features
-   
-    def add_param_features(self, tc, raw_param_features):
-
-        for option, param_features in raw_param_features:
-            features = [self.param_vectorizers[option].transform([param_features])]
-            features = np.concatenate(features, axis=1).flatten()
-            param_features = tuple(param_features)
-            self.param_features[option][(hash(tc),hash(param_features))] = features
-
-    def add_labels(self, tc, raw_param_features, labels):
-
-        labels = dict(labels)
-        for option, param_features in raw_param_features:
-            param_features = tuple(param_features)
-            self.labels[option][(hash(tc), hash(param_features))] = labels[option]
-    
     def __contains__(self, x):
         if self.testcases is None:
             return False
-        return hash(x) in self.exec_features
-    
-    def get_exec_features(self, x):
-        return self.exec_features.get(hash(x), None)
-
-    #def get_label(self, option, x):
-    #    return self.labels[option].get(hash(x), None)
-    
+        return hash(x) in self.testcases   
    
     def add(self, tc, exec_features, param_features, labels):
         
         # testcases
-        if hash(tc) not in self.testcases:
-            self.testcases[hash(tc)] = tc
-            self.add_exec_features(tc, exec_features)
+        tid = hash(tc) 
+        if tid not in self.testcases:
+            self.testcases[tid] = tc
 
-        self.add_param_features(tc, param_features)
-        self.add_labels(tc, param_features, labels)
-        #print self.exec_features
-        #print self.param_features
-        self._save()
-
-    def join_features(self, option, (tid, pid)):
-        v = []
-        v.append(self.param_features[option][tid,pid])
-        v.append(self.exec_features[tid])
-        return np.concatenate(v)
- 
-    def choice(self, raw_exec_features):
-        ret = dict()
-
+        # save exec features
+        exec_features.save(self.storage+"/exec_features/"+str(tid)+".csv.gz")
+        
+        # add label
         for option in self.options:
+            pid = hash(param_features[option])
+            self.labels[option][(tid, pid)] = labels[option] 
 
-            ret[option] = []
-            X = []
-            labels = []
-            params = []
-
-            for ((tid,pid),label) in self.labels[option].items():
-                v = self.join_features(option, (tid,pid))
-                X.append(v)
-                #print v.shape
-                labels.append(label)
-                params.append(None)
-
-            for raw_param_features in self.param_generators[option].enumerate():
-
-                features = [self.param_vectorizers[option].transform([raw_param_features])]
-                for i,raw_feature in enumerate(raw_exec_features):
-                    row = self.exec_vectorizers[i].transform([raw_feature])
-                    features.append(row)
-                #print features
-                features = np.concatenate(features, axis=1).flatten()
-                #print features.shape 
-                X.append(features)
-                labels.append(lbls['?'])
-                params.append(raw_param_features)
- 
-            #print labels
-            self.predictors[option].fit(X,labels)
-            pred_entropies = stats.distributions.entropy(
-                                self.predictors[option].label_distributions_.T)
-            results = zip(self.predictors[option].transduction_, pred_entropies)
-             
-            for i,(label,entropy) in enumerate(results):
-                if params[i] is None:
-                    continue
-                ret[option].append((params[i], label, entropy))
-
-        return ret
-
-    def _save(self):
-
+        # save params features
         for option in self.options:
-            for ((tid,pid),x) in self.param_features[option].items():
-                np.savez_compressed(self.storage+'/param_features/'+option+'.'+str(tid)+'.'+str(pid)+'.npz',x)
+            pid = hash(param_features[option])
+            param_features[option].save(self.storage+"/param_features/"+option+"."+str(tid)+"."+str(pid)+".csv.gz")
 
-        for (tid,x) in self.exec_features.items():
-                np.savez_compressed(self.storage+'/exec_features/'+str(tid)+'.npz',x)
-
-
-        #np.savez_compressed("data/features.npz",X)
+        # save testcases and labels dicts
         joblib.dump(self.testcases, self.storage+'/testcases.pkl')
         joblib.dump(self.labels, self.storage+'/labels.pkl')
-        joblib.dump(self.exec_vectorizers, self.storage+'/exec_vectorizers.pkl')
-        joblib.dump(self.param_vectorizers, self.storage+'/param_vectorizers.pkl') 
-        joblib.dump(self.param_generators, self.storage+'/param_generators.pkl')
-    
-    def _load(self):
-        try:
-            self.exec_vectorizers = joblib.load(open(self.storage+'/exec_vectorizers.pkl', 'rb'))
-            self.param_vectorizers = joblib.load(open(self.storage+'/param_vectorizers.pkl', 'rb'))
-            self.param_generators = joblib.load(open(self.storage+'/param_generators.pkl', 'rb'))
-
-            self.testcases = joblib.load(open(self.storage+'/testcases.pkl', 'rb'))
-            self.labels = joblib.load(open(self.storage+'/labels.pkl', 'rb'))
-
-            for x, y, files in os.walk(self.storage+"/param_features"):
-                for f in files:
-                    feature_filepath = x + "/".join(y) + "/" + f
-                    option = str(f.split(".")[0])
-                    tid = int(f.split(".")[1])
-                    pid = int(f.split(".")[2])
-                    #print feature_filepath, x,y,f
-                    self.param_features[option][(tid,pid)] = np.load(feature_filepath)['arr_0']
-
-            for x, y, files in os.walk(self.storage+"/exec_features"):
-                for f in files:
-                    feature_filepath = x + "/".join(y) + "/" + f
-                    tid = int(f.split(".")[0])
-                    #print feature_filepath, x,y,f
-                    self.exec_features[tid] = np.load(feature_filepath)['arr_0'] 
-
-        except:
-            return False 
-
 
 class MultiPolicy(Policy):
     def __init__(self, options, storages):

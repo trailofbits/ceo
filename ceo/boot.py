@@ -32,7 +32,7 @@ def init(options, target_filename, nsamples, cpus, timeout, storage="ceo", verbo
 
         if len(tc_min) == 0:
             continue
-
+        print tc_min
         exec_features = get_features(tc_min, timeout, boot=True, verbose=verbose)
 
     if cpus is None: 

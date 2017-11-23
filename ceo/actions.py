@@ -10,7 +10,7 @@ from ceo.tools import grrshot_path, grrplay_path, grr_mutators
 from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
-from ceo.features import ExecFeatures
+from ceo.features import ExecFeatures, ParamFeatures
 from ceo.plugins import FeatureCollector, FeatureExtractor, StateCollector
 from ceo.concrete_execution import make_initial_concrete_state 
 from ceo.symbolic_execution import make_initial_symbolic_state 
@@ -61,9 +61,9 @@ class FeaturesMCore(Action):
 
         m.run(procs=procs, timeout=timeout)
 
-        if write != None:
-            features.write(write)
-        return features.get()
+        #if write != None:
+        #    features.write(write)
+        return features#.get()
 
 class FeaturesMCoreEVM(Action):
     '''
@@ -152,10 +152,10 @@ class ExploreMCore(Action):
 
 
     def get_features(self):
-        features = []
-        features.append(self.extra_args["policy"])
-        features.append(self.extra_args["dist_symb_bytes"])
-        features.append(self.extra_args["rand_symb_bytes"])
+        features = ParamFeatures(self.extra_args)
+        #features.append(self.extra_args["policy"])
+        #features.append(self.extra_args["dist_symb_bytes"])
+        #features.append(self.extra_args["rand_symb_bytes"])
         return features
 
     def _parse_txt(self, f):
@@ -317,7 +317,7 @@ class ExploreAFL(Action):
         self.crashes = []
 
     def get_features(self):
-        features = []
+        features = ParamFeatures(self.extra_args)
         return features
 
     def save_results(self, input_dir, crash_dir):
@@ -403,8 +403,7 @@ class ExploreGrr(Action):
         shutil.copy(self.target_path, self.workspace+"/0001")
 
     def get_features(self):
-        features = []
-        features.append(self.extra_args["mutator"])
+        features = ParamFeatures(self.extra_args)
         return features
 
     def save_results(self, input_dir, crash_dir):

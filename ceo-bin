@@ -10,7 +10,7 @@ from ceo.exploration import explore
 from ceo.test     import test, stats
 from ceo.actions  import MinimizeTestcaseAFL, MinimizeInputsAFL
 from ceo.parameters  import init_parameter_generators
-from ceo.policy   import TestcasePolicy
+from ceo.policy   import Storage #TestcasePolicy
 from ceo.labels   import lbls
 from ceo.vectorizer import init_vectorizers
 from ceo.reduce  import reduce_inputs, reduce_testcase
@@ -106,11 +106,11 @@ if __name__ == '__main__':
         stats(options, target_filename, cpus, storage=storage_dir, verbose=verbosity)
         exit(0)
 
-    if mode == "train":
+    if mode == "collect":
 
         names, paths = load_targets(target_filename)
         print "[+] Initilization vectorizer(s) ..."
-        policy = TestcasePolicy(features_list, init_vectorizers, init_parameter_generators, options)
+        policy = Storage(storage_dir, features_list, options)
         print "[+] Collecting data to train"
  
         for _ in xrange(nsamples):

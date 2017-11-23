@@ -30,10 +30,11 @@ def make_symbolic_decree(program, concrete_data, dist_symb_bytes, rand_symb_byte
     concrete_len = len(concrete_data)
     symb_size = max(1, int(16*rand_symb_bytes))
     #print dist_symb_bytes, rand_symb_bytes
+    print concrete_len, symb_size
 
     if concrete_len < symb_size:
         random_symbolic = range(symb_size)
-        concrete_data = [None]*symb_size 
+        concrete_data = ["+"]*symb_size 
     elif dist_symb_bytes == "dense":
         offset_symbolic = randint(0, concrete_len-symb_size)
         random_symbolic = range(offset_symbolic, offset_symbolic + symb_size)
@@ -42,11 +43,20 @@ def make_symbolic_decree(program, concrete_data, dist_symb_bytes, rand_symb_byte
     else:
         assert(0)
 
-    for i in random_symbolic:
-        concrete_data[i] = '+'
-
     concrete_data = "".join(concrete_data)
+    #data = initial_state.symbolicate_buffer("+"*concrete_len, label='RECEIVE')
+
+    for i in range(concrete_len):
+        if i in random_symbolic:
+            platform.input.transmit(initial_state.symbolicate_buffer("+", label='SYMB_'+str(i)))
+        else:
+            platform.input.transmit(concrete_data[i])
+        #else:
+        #    concrete_data[i] = '+'
+
+    #print initial_state.constraints
     print('Starting with concrete input: {}'.format(repr(concrete_data)))
- 
-    platform.input.transmit(initial_state.symbolicate_buffer(concrete_data, label='RECEIVE'))
+    #platform.input.transmit(data)
+    #    else:
+    #        platform.input.transmit(initial_state.symbolicate_buffer(concrete_data, label='RECEIVE'))
     return initial_state
