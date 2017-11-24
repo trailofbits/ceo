@@ -283,7 +283,8 @@ class ExploreAFL(Action):
         self.crashes = []
 
     def get_features(self):
-        features = ParamFeatures(self.extra_args)
+        features = ParamFeatures()
+        features.add_params(self.extra_args)
         return features
 
     def save_results(self, input_dir, crash_dir):
@@ -369,7 +370,8 @@ class ExploreGrr(Action):
         shutil.copy(self.target_path, self.workspace+"/0001")
 
     def get_features(self):
-        features = ParamFeatures(self.extra_args)
+        features = ParamFeatures()
+        features.add_params(self.extra_args)
         return features
 
     def save_results(self, input_dir, crash_dir):
