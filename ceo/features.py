@@ -1,5 +1,6 @@
 import csv
 import gzip
+import os
 
 features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs", "visited"]
 
@@ -111,21 +112,31 @@ class Features(object):
 class ParamFeatures(Features):
     '''
         Feature extraction from action parameters
-    ''' 
-    def __init__(self, features):
-        self._features = features
+    '''
+    def __init__(self):
+        self._features = dict()
+
+    def add_params(self, params):
+        self._features = params
 
     def __hash__(self):
         return hash(frozenset(self._features.items()))
 
     def save(self, filename):
         with gzip.open(filename,'wb') as f:
-            w = csv.DictWriter(f, self._features.keys())
+            w = csv.DictWriter(f, self._features.keys(), delimiter=';')
             w.writeheader()
             w.writerow(self._features)
 
-    def load(self, filename):
-        assert(0)
+    def load(self, dirname):
+        with gzip.open(dirname,'rb') as f:
+            r = csv.DictReader(f, delimiter=';')
+            for row in r:
+                if len(row) > 0:
+                    self._features = row
+
+    def get(self):
+        return self._features
 
 class ExecFeatures(Features):
     '''
@@ -165,8 +176,6 @@ class ExecFeatures(Features):
         features = self._features
         transmited = features.get("transmited","") 
         x = mkfeatures_transmited(state)
-        #if x != '':
-        #    print set(x.split("\n"))
         features["transmited"] = x
         """
         rw = features.get("read-write",[(0,0,0)]) 
@@ -179,11 +188,11 @@ class ExecFeatures(Features):
         if x != ad[-1]:
             features["alloc-dealloc"] = ad + [x]
         """
-    def get(self):
-        ret = dict()
-
-        ret["program"] = [self._program]
+    def _process(self):
         features = self._features
+ 
+        ret = dict()
+        #ret["program"] = self._program
         ret["insns"] = " ".join(features.get("insns",[])) 
         ret["syscalls"] = " ".join(features.get("syscalls",[]))
 
@@ -199,20 +208,37 @@ class ExecFeatures(Features):
         #ret["allocs"] = allocs
         #ret["deallocs"] = deallocs
 
-        x = features.get("visited",set()) 
-        ret["visited"] = x
+        ret["transmited"] = "\n".join(features.get("transmited",[]))
+
+        x = features.get("visited",set())
+        x = map(lambda (x,y): str(x)+","+str(y), list(x))
+        ret["visited"] = " ".join(x)
         #print x
  
         return ret
 
-    def load(self, filename):
-        assert(0)
+    def load(self, dirname):
+        with gzip.open(dirname,'rb') as f:
+            r = csv.DictReader(f, delimiter=';')
+            for row in r:
+                if len(row) > 0:
+                    self._features = row
+
+    def get(self):
+        return self._features
 
     def save(self, filename):
-        row = [self._program]
-        features = self._features
-        row.append( " ".join(features.get("insns",[])) )
-        row.append( " ".join(features.get("syscalls",[])) )
+
+        with gzip.open(filename,'wb') as f:
+            features = self._process()
+            w = csv.DictWriter(f, features.keys(), delimiter=';')
+            w.writeheader()
+            w.writerow(features)
+
+        #row = [self._program]
+        #features = self._features
+        #row.append( " ".join(features.get("insns",[])) )
+        #row.append( " ".join(features.get("syscalls",[])) )
         #print "Lines transmited:"
         #lines = []
         #for line in set(features.get("transmited","").split("\n")):
@@ -231,6 +257,6 @@ class ExecFeatures(Features):
         #row.append( ",".join(map(str, allocs)))
         #row.append( ",".join(map(str, deallocs)))
 
-        with gzip.open(filename, 'a+') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=';')
-            csvwriter.writerow(row)
+        #with gzip.open(filename, 'a+') as csvfile:
+        #    csvwriter = csv.writer(csvfile, delimiter=';')
+        #    csvwriter.writerow(row)

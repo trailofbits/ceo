@@ -7,11 +7,11 @@ from random import choice
 from ceo.testcase import Testcase, load_targets, init_testcases, load_testcases
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
-from ceo.storage  import init_storage
+#from ceo.storage  import init_storage
 
 def init(options, target_filename, nsamples, cpus, timeout, storage="ceo", verbose=1):
 
-    init_storage(storage)
+    #init_storage(storage)
     names, paths = load_targets(target_filename)
     print "[+] Initilization testcases"
     init_testcases(names, paths)
@@ -40,7 +40,7 @@ def init(options, target_filename, nsamples, cpus, timeout, storage="ceo", verbo
 
     for i,batch in enumerate(array_split(zip(names, paths), cpus)):
          dirname = "fold-"+str(i)
-         init_storage(dirname + "/" + storage)
+         #init_storage(dirname + "/" + storage)
          target_file = dirname+"/" + target_filename
 
          try:

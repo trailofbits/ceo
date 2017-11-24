@@ -10,9 +10,8 @@ from ceo.exploration import explore
 from ceo.test     import test, stats
 from ceo.actions  import MinimizeTestcaseAFL, MinimizeInputsAFL
 from ceo.parameters  import init_parameter_generators
-from ceo.policy   import Storage #TestcasePolicy
+from ceo.storage   import Storage
 from ceo.labels   import lbls
-from ceo.vectorizer import init_vectorizers
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
 from ceo.features import features_list
@@ -59,7 +58,7 @@ def parse_arguments():
                         help="Target file containing one executable program per line")
 
     parser.add_argument('mode', type=str,
-                        help="Mode (boot/train/test/stats/plot)")
+                        help="Mode (init/collect/train/test/stats/plot)")
 
     parsed = parser.parse_args()
     return parsed
@@ -147,4 +146,4 @@ if __name__ == '__main__':
             policy.add(tc_min, exec_features, param_features, labels)
 
     else:
-        print "[-] Invalid mode!"
+        print "[-] Not implemented or invalid mode!"

@@ -2,7 +2,7 @@ import os
 
 from random import choice
 
-from ceo.policy import MultiPolicy
+from ceo.policy import PredictivePolicy
 from ceo.sampling import shuffle, stratified_shuffle
 from ceo.testcase import Testcase, load_targets, load_testcases
 from ceo.extraction  import get_features
@@ -27,7 +27,7 @@ def stats(options, target_filename, cpus, storage="ceo", verbose=0):
             prefixes.append(x)
             targetss.append(load_targets(x+"/"+target_filename))
 
-    policy = MultiPolicy(options, storages)
+    policy = PredictivePolicy(options, storages)
     data = policy.get_data()
 
     print "[+] Fraction of labels collected:"
@@ -38,9 +38,9 @@ def stats(options, target_filename, cpus, storage="ceo", verbose=0):
             count[i] = labels.count(i)
             print i, count[i], count[i] / float(len(labels))
 
-    for option, (progs, X, labels) in data.items():
-        train_predictor(progs, X, labels, cpus, verbose=1)
-
+    #for option, (progs, X, labels) in data.items():
+    #    train_predictor(progs, X, labels, cpus, verbose=1)
+    
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 
     # auto CPU selection

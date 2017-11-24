@@ -119,7 +119,8 @@ class ExploreMCore(Action):
 
 
     def get_features(self):
-        features = ParamFeatures(self.extra_args)
+        features = ParamFeatures()
+        features.add_params(self.extra_args)
         return features
 
     #def _parse_txt(self, f):

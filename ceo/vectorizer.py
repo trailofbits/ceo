@@ -18,6 +18,9 @@ import networkx as nx
 #mpl.use('Agg')
 #import matplotlib.pyplot as plt
 
+# TODO: find a better place for this
+csv.field_size_limit(sys.maxsize) 
+
 from ceo.tools import manticore_policies, manticore_dist_symb_bytes
 from ceo.tools import grr_mutators 
 from ceo.features import features_list
