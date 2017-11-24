@@ -311,8 +311,8 @@ class ExploreAFL(Action):
         if  len(self.inputs) > 1:
             return lbls['new']
 
-        if  len(self.inputs) == 1:
-            return lbls['nothing']
+        #if  len(self.inputs) == 1:
+        #    return lbls['nothing']
 
         return lbls['fail']
 
@@ -393,8 +393,8 @@ class ExploreGrr(Action):
         if  len(self.inputs) > 1:
             return lbls['new']
 
-        if  len(self.inputs) == 1:
-            return lbls['nothing']
+        #if  len(self.inputs) == 1:
+        #    return lbls['nothing']
 
         return lbls['fail']
 
