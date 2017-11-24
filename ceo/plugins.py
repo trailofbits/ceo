@@ -33,9 +33,8 @@ class FeatureCollector(Plugin):
         #print self.last_state.platform.syscall_trace
 
 class StateCollector(Plugin):
-    def __init__(self, executor):
-        self.executor = executor
+    def __init__(self):
         super(StateCollector, self).__init__()
 
     def will_fork_state_callback(self, state, expression, solutions, policy):
-        self.executor.generate_testcase(state, "New forked state!")
+        self.manticore._executor.generate_testcase(state, "New forked state!")

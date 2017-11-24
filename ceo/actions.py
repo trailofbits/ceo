@@ -13,7 +13,7 @@ from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures, ParamFeatures
 from ceo.plugins import FeatureCollector, FeatureExtractor, StateCollector
 from ceo.concrete_execution import make_initial_concrete_state 
-from ceo.symbolic_execution import make_initial_symbolic_state 
+from ceo.symbolic_execution import make_initial_symbolic_state, reconstruct_concrete_file 
 
 from ceo.evm import ManticoreEVM
 
@@ -49,16 +49,6 @@ class FeaturesMCore(Action):
         features = ExecFeatures()
         m.register_plugin(FeatureCollector(features, 0.05))
         m.register_plugin(FeatureExtractor())
-        #m.register_plugin(PCExtractor())
-
-        #Manticore.verbosity(verbose)
-        #@m.hook(None)
-        #def explore(state): 
-        #    if random.random() <= 0.05:
-        #        features.add_insns(state)
-        #    features.add_syscalls_seq(state)
-        #    features.add_syscalls_stats(state)
-
         m.run(procs=procs, timeout=timeout)
 
         #if write != None:
@@ -93,35 +83,12 @@ class FeaturesMCoreEVM(Action):
         def explore(state,pc, instruction):
             print pc, instruction
 
-        #m.add_hook(None, explore)
-
         m.register_plugin(FeatureCollector())
         m.transaction(  caller=user_account,
                            address=contract_account,
                            value=None,
                            data=concrete_data,
                          )
-
-        #initial_concrete_state = make_initial_concrete_state(self.target_path,
-        #                                                     concrete_data)
-                                                           
-        #m = Manticore(initial_concrete_state, workspace_url=self.workspace, policy="random")
-        #m.verbosity(verbose) 
-        #m.register_plugin(FeatureCollector())
-        #Manticore.verbosity(verbose)
-        #features = ExecFeatures()
-
-        #@m.hook(None)
-        #    if random.random() <= 0.05:
-        #        features.add_insns(state)
-        #    features.add_syscalls_seq(state)
-
-        #m.run(procs=procs, timeout=timeout)
-
-        #if write != None:
-        #    features.write(write)
-        #return features.get()[1:]
-
 
 
 
@@ -153,17 +120,14 @@ class ExploreMCore(Action):
 
     def get_features(self):
         features = ParamFeatures(self.extra_args)
-        #features.append(self.extra_args["policy"])
-        #features.append(self.extra_args["dist_symb_bytes"])
-        #features.append(self.extra_args["rand_symb_bytes"])
         return features
 
-    def _parse_txt(self, f):
-        return open(f, "r").read().split("_1:")[1].replace("'","").decode('string_escape')
+    #def _parse_txt(self, f):
+    #    return open(f, "r").read().split("_1:")[1].replace("'","").decode('string_escape')
 
     def _check_output(self, m):
         last_state_id = m._executor._workspace._last_id.value
-        print "last_state_id", last_state_id
+        #print "last_state_id", last_state_id
         files = m._executor._workspace._store.ls("*.messages")
         uri = m._executor._workspace._store.uri
          
@@ -173,7 +137,8 @@ class ExploreMCore(Action):
 
             if not os.path.isfile(stdin_filename):
                 #if i
-                open(stdin_filename,"w+").write(self._parse_txt(txt_filename))
+                data = reconstruct_concrete_file(txt_filename, self.input_path)
+                open(stdin_filename,"w+").write(data)
 
             if "Invalid memory access" in open(uri + "/" + f,"rb").read():
                 self.crashes.append(stdin_filename)
@@ -183,7 +148,7 @@ class ExploreMCore(Action):
         if len(self.crashes) > 0:
             return lbls['found']
 
-        if  len(self.inputs) > 0:
+        if len(self.inputs) > 1:
             return lbls['new']
 
         #if  len(self.inputs) == 1:
@@ -209,7 +174,7 @@ class ExploreMCore(Action):
         m = Manticore(initial_symbolic_state, workspace_url=self.workspace, policy=self.extra_args["policy"])  
         #m.plugins = set() 
         Manticore.verbosity(verbose)
-        m.register_plugin(StateCollector(m._executor))
+        m.register_plugin(StateCollector())
 
         m.run(procs=procs, timeout=timeout)
         return self._check_output(m)

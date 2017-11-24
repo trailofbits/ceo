@@ -28,6 +28,9 @@ def parse_arguments():
     # parse arguments
     parser = ArgumentParser(description='')
 
+    parser.add_argument('--seed', type=int, default=None,
+                        help="Random seed to use")
+
     parser.add_argument('--cpus', type=int, default=None,
                         help="Number of CPUs to use")
 
@@ -70,8 +73,9 @@ if __name__ == '__main__':
     target_filename = args.targets
     storage_dir = args.storage
     verbosity = args.verbose
+    myseed = args.seed
 
-    seed()
+    seed(myseed)
 
     # resource limits
     extraction_timeout = args.extraction_timeout

@@ -1,6 +1,6 @@
 from manticore.core.smtlib import ConstraintSet
 from manticore.core.state import State
-from manticore.platforms import linux, decree, windows, evm
+from manticore.platforms import linux, decree, evm
 
 def make_initial_concrete_state(binary_path, concrete_data):
     magic = file(binary_path).read(4)

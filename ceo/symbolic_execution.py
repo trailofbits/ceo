@@ -19,6 +19,22 @@ def make_initial_symbolic_state(binary_path, concrete_data, dist_symb_bytes, ran
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
 
+def reconstruct_concrete_file(txt_filename, original_filename):
+    lines = open(txt_filename,"r").read().split("\n")
+    data = list(open(original_filename,"r").read())
+    diff = dict()
+    for line in lines:
+        if len(line) <= 1:
+            continue
+        pos = int(line.split("_")[1])
+        value = line.split(": ")[1].replace("'","").decode('string_escape')
+        diff[pos] = value
+
+    for pos,value in diff.items():
+        data[pos] = value
+
+    return "".join(data)
+
 
 def make_symbolic_decree(program, concrete_data, dist_symb_bytes, rand_symb_bytes):
     assert( rand_symb_bytes > 0.0) 
@@ -30,7 +46,7 @@ def make_symbolic_decree(program, concrete_data, dist_symb_bytes, rand_symb_byte
     concrete_len = len(concrete_data)
     symb_size = max(1, int(16*rand_symb_bytes))
     #print dist_symb_bytes, rand_symb_bytes
-    print concrete_len, symb_size
+    #print concrete_len, symb_size
 
     if concrete_len < symb_size:
         random_symbolic = range(symb_size)
