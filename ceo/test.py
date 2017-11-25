@@ -8,6 +8,7 @@ from ceo.testcase import Testcase, load_targets, load_testcases
 from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.predictors import train_predictor #eval_rf, eval_svm, eval_knn
+from ceo.plot import plot_data
 from ceo.labels import lbls
 
 def stats(options, target_filename, cpus, storage="ceo", verbose=0):
@@ -36,10 +37,13 @@ def stats(options, target_filename, cpus, storage="ceo", verbose=0):
         count = dict()
         print option
         for label,n in lbls.items():
+            if n < 0:
+                continue
             count[n] = labels.count(n)
             print label,n, count[n], count[n] / float(len(labels))
 
-    #for option, (progs, X, labels) in data.items():
+    for option, (progs, X, labels) in data.items():
+        plot_data(progs, X, labels, verbose=verbose)
     #    train_predictor(progs, X, labels, cpus, verbose=1)
     
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):

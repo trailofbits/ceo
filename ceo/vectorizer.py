@@ -76,6 +76,7 @@ class MCoreParamVectorizer(Vectorizer):
         #print "x",x
         ret = []
         
+        # TODO: use constants from tool.py
         strings = ["random", "uncovered", "branchlimited"] 
         v = [0]*len(strings)
         v[strings.index(x[0])] = 1
@@ -97,8 +98,11 @@ class GraphVectorizer(Vectorizer):
     def fit(self, x):
         pass
 
-    def transform(self, edgess):
-        edges = edgess[0]
+    def transform(self, raw_edgess):
+        raw_edges = raw_edgess[0]
+        edges = []
+        for x in raw_edges.split(" "):
+            edges.append(x.split(","))
 
         H = nx.DiGraph()
 
@@ -194,8 +198,10 @@ class TFIDFVectorizer(Vectorizer):
         return self._vectorizer.transform(x).toarray()
    
 class CountVectorizer(Vectorizer):
-    def __init__(self, ngram_range, max_features):
-        self._vectorizer = skCountVectorizer(ngram_range=ngram_range, max_features=max_features, tokenizer=_tokenizer, lowercase=True)
+    def __init__(self, ngram_range, max_features, vocabulary=None):
+        self._vectorizer = skCountVectorizer(ngram_range=ngram_range, max_features=max_features, 
+                                             tokenizer=_tokenizer, lowercase=True,
+                                             vocabulary=vocabulary)
 
     def fit_transform(self, x):
         return self._vectorizer.fit_transform(x)
@@ -274,29 +280,29 @@ class Sent2VecVectorizer(Vectorizer):
                 for x in X:
                     out_stream.write(x+' \n')
 
-def init_vectorizers():
-    filename = "boot.csv.gz"
+def init_vectorizers(raw_features):
+    #filename = "boot.csv.gz"
 
     exec_vectorizers = dict()
     param_vectorizers = dict()
-
-    insns_idx = 1
-    syscalls_idx = 2
-    reads_idx = 3
-    writes_idx = 4
-    allocs_idx = 5
-    deallocs_idx = 6
+    
+    #insns_idx = 1
+    #syscalls_idx = 2
+    #reads_idx = 3
+    #writes_idx = 4
+    #allocs_idx = 5
+    #deallocs_idx = 6
 
     #programs = []
-    insns = []
-    syscalls = []
-    csv.field_size_limit(sys.maxsize)
-    raw_features = dict()
+    #insns = []
+    #syscalls = []
+    #csv.field_size_limit(sys.maxsize)
+    #raw_features = dict()
 
-    for name in features_list:
-        raw_features[name] = []
+    #for name in features_list:
+    #    raw_features[name] = []
 
-    with gzip.open(filename, 'rb') as csvfile:
+    """with gzip.open(filename, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for row in reader:
             #programs.append(row[program_idx]) 
@@ -306,7 +312,7 @@ def init_vectorizers():
             #raw_features["writes"].append(map(int, row[writes_idx].split(","))) 
             #raw_features["allocs"].append(map(int, row[allocs_idx].split(","))) 
             #raw_features["deallocs"].append(map(int, row[deallocs_idx].split(","))) 
-
+    """
     #print raw_features
     #assert(0)
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
@@ -317,10 +323,13 @@ def init_vectorizers():
     #exec_vectorizers["writes"] = SeriesVectorizer() 
     #exec_vectorizers["allocs"] = SeriesVectorizer() 
     #exec_vectorizers["deallocs"] = SeriesVectorizer() 
+    exec_vectorizers["transmited"] = CountVectorizer(ngram_range=(1,1), max_features=500, vocabulary=["hello"])
+ 
     exec_vectorizers["visited"] = GraphVectorizer()
 
     exec_vectorizers["insns"].fit(raw_features["insns"])
     exec_vectorizers["syscalls"].fit(raw_features["syscalls"])
+    exec_vectorizers["transmited"].fit(raw_features["transmited"]) 
     #exec_vectorizers["reads"].fit(raw_features["reads"])
     #exec_vectorizers["writes"].fit(raw_features["writes"])
     #exec_vectorizers["allocs"].fit(raw_features["allocs"])
