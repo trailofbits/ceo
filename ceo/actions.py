@@ -49,7 +49,11 @@ class FeaturesMCore(Action):
         features = ExecFeatures()
         m.register_plugin(FeatureCollector(features, 0.05))
         m.register_plugin(FeatureExtractor())
-        m.run(procs=procs, timeout=timeout)
+        
+        try:
+            m.run(procs=procs, timeout=timeout)
+        except AssertionError:
+            pass
 
         #if write != None:
         #    features.write(write)
@@ -177,8 +181,13 @@ class ExploreMCore(Action):
         Manticore.verbosity(verbose)
         m.register_plugin(StateCollector())
 
-        m.run(procs=procs, timeout=timeout)
+        try:
+            m.run(procs=procs, timeout=timeout)
+        except AssertionError:
+            return lbls['fail']
+        
         return self._check_output(m)
+
 
 
 class MinimizeInputsAFL(Action):
