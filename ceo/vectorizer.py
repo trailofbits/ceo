@@ -186,7 +186,7 @@ class TFIDFVectorizer(Vectorizer):
     def __init__(self, ngram_range, max_features, vocabulary=None):
         self._vectorizer = skTfidfVectorizer(ngram_range=ngram_range, max_features=max_features, 
                                           tokenizer=_tokenizer, lowercase=True,
-                                          vocabulary=vocabulary)
+                                          vocabulary=vocabulary, decode_error="replace")
 
     def fit_transform(self, x):
         return self._vectorizer.fit_transform(x)
@@ -201,7 +201,7 @@ class CountVectorizer(Vectorizer):
     def __init__(self, ngram_range, max_features, vocabulary=None):
         self._vectorizer = skCountVectorizer(ngram_range=ngram_range, max_features=max_features, 
                                              tokenizer=_tokenizer, lowercase=True,
-                                             vocabulary=vocabulary)
+                                             vocabulary=vocabulary, decode_error="replace")
 
     def fit_transform(self, x):
         return self._vectorizer.fit_transform(x)
