@@ -1,3 +1,4 @@
+import os.path
 from os import makedirs
 
 from sklearn.externals import joblib
@@ -14,7 +15,7 @@ class Storage(object):
             self.labels[x] = dict()
 
         self._init_storage()
-        self_load()
+        self._load()
 
     def __contains__(self, x):
         if self.testcases is None:
@@ -29,17 +30,21 @@ class Storage(object):
             pass
 
     def _load(self):
-        storage = self.storages:
-        testcases = joblib.load(open(storage+'/testcases.pkl', 'rb'))
-        for x,y in testcases.items():
-            assert(not (x in self.testcases))
-            self.testcases[x] = y
+        storage = self.storage
+        if os.path.isfile(storage+'/testcases.pkl'):
+ 
+            testcases = joblib.load(open(storage+'/testcases.pkl', 'rb'))
+            for x,y in testcases.items():
+                assert(not (x in self.testcases))
+                self.testcases[x] = y
 
-        labels = joblib.load(open(storage+'/labels.pkl', 'rb'))
-        for option in self.options:
-            for x,y in labels[option].items():
-                assert(not (x in self.labels))
-                self.labels[option][x] = y
+        if os.path.isfile(storage+'/labels.pkl'):
+ 
+            labels = joblib.load(open(storage+'/labels.pkl', 'rb'))
+            for option in self.options:
+                for x,y in labels[option].items():
+                    assert(not (x in self.labels))
+                    self.labels[option][x] = y
 
     def add(self, tc, exec_features, param_features, labels):
         
