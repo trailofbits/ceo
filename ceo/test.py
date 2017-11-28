@@ -9,9 +9,11 @@ from ceo.extraction  import get_features
 from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.predictors import train_predictor #eval_rf, eval_svm, eval_knn
 from ceo.plot import plot_data
+from ceo.features import select_features
+from ceo.vectorizer import vectorize
 from ceo.labels import lbls
 
-def stats(options, target_filename, cpus, storage="ceo", verbose=0):
+def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
 
     # auto CPU selection
     if cpus is None:
@@ -29,8 +31,9 @@ def stats(options, target_filename, cpus, storage="ceo", verbose=0):
             prefixes.append(x)
             targetss.append(load_targets(x+"/"+target_filename))
 
+    #features = ["syscalls","visited"]
     policy = PredictivePolicy(options, storages)
-    data = policy.get_data()
+    data = policy.get_data(options,features)    
 
     print "[+] Fraction of labels collected:"
     for option, (progs, X, labels) in data.items():
@@ -42,9 +45,13 @@ def stats(options, target_filename, cpus, storage="ceo", verbose=0):
             count[n] = labels.count(n)
             print label,n, count[n], count[n] / float(len(labels))
 
+    #features = ["visited"]
     for option, (progs, X, labels) in data.items():
-        plot_data(progs, X, labels, verbose=verbose)
-    #    train_predictor(progs, X, labels, cpus, verbose=1)
+        #X = select_features(X, features)
+        #print X["exec_features"]
+        data = vectorize(X, option, features)
+        plot_data(progs, data, labels, verbose=verbose)
+        #train_predictor(progs, X, labels, cpus, verbose=1)
     
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 

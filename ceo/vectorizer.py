@@ -43,7 +43,7 @@ class AFLParamVectorizer(Vectorizer):
         return self._vectorizer.transform(x)
 
     def transform(self, x):
-        return np.array(x)
+        return np.array([x])
 
 class GrrParamVectorizer(Vectorizer):
     def __init__(self):
@@ -58,7 +58,7 @@ class GrrParamVectorizer(Vectorizer):
         
         strings = self.mutators
         v = [0]*len(strings)
-        v[strings.index(x[0])] = 1
+        v[strings.index(x["mutator"])] = 1
         ret.extend(v)
 
         return np.array([ret])
@@ -79,15 +79,15 @@ class MCoreParamVectorizer(Vectorizer):
         # TODO: use constants from tool.py
         strings = ["random", "uncovered", "branchlimited"] 
         v = [0]*len(strings)
-        v[strings.index(x[0])] = 1
+        v[strings.index(x["policy"])] = 1
         ret.extend(v)
 
         strings = ["sparse", "dense"]
         v = [0]*len(strings)
-        v[strings.index(x[1])] = 1
+        v[strings.index(x["dist_symb_bytes"])] = 1
         ret.extend(v)
  
-        ret.append(x[2])
+        ret.append(x["rand_symb_bytes"])
         return np.array([ret])
 
 
@@ -117,6 +117,7 @@ class GraphVectorizer(Vectorizer):
 
         #print H.number_of_nodes()
         #print nx.info(H)
+        """
         pathlengths=[]
         for v in H.nodes():
             spl=nx.single_source_shortest_path_length(H,v)
@@ -135,18 +136,19 @@ class GraphVectorizer(Vectorizer):
             for i in range(1024):
                 if i in dist:
                     u[i] = dist[i] / float(nnodes)
+        """
         #print u 
         v = nx.degree_histogram(H)
         v = v[:18]
         v = v + [0]*(18-len(v))
-        del v[2]
-        del v[0]
+        #del v[2]
+        #del v[0]
         total = sum(v)
         if total > 0:
             for i,x in enumerate(v):
                 v[i] = x / float(total)  
         #print v
-        return np.array([u+v])
+        return np.array([v])
 
 class SeriesVectorizer(Vectorizer):
     def __init__(self):
@@ -282,6 +284,8 @@ class Sent2VecVectorizer(Vectorizer):
 
 def init_vectorizers(raw_features):
     #filename = "boot.csv.gz"
+    exec_features = raw_features["exec_features"].keys()
+    #param_features = raw_features["param_features"].keys()
 
     exec_vectorizers = dict()
     param_vectorizers = dict()
@@ -317,19 +321,26 @@ def init_vectorizers(raw_features):
     #assert(0)
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
 
-    exec_vectorizers["insns"] = TFIDFVectorizer(ngram_range=(3,3), max_features=500)
-    exec_vectorizers["syscalls"] = TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
+    if "insns" in exec_features:
+        exec_vectorizers["insns"] = CountVectorizer(ngram_range=(2,2), max_features=500)
+        exec_vectorizers["insns"].fit(raw_features["exec_features"]["insns"])
+        print exec_vectorizers["insns"]._vectorizer.vocabulary_
+
+    if "syscalls" in exec_features:
+        exec_vectorizers["syscalls"] = TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
+        exec_vectorizers["syscalls"].fit(raw_features["exec_features"]["syscalls"])
+
     #exec_vectorizers["reads"] = SeriesVectorizer() 
     #exec_vectorizers["writes"] = SeriesVectorizer() 
     #exec_vectorizers["allocs"] = SeriesVectorizer() 
     #exec_vectorizers["deallocs"] = SeriesVectorizer() 
-    exec_vectorizers["transmited"] = CountVectorizer(ngram_range=(1,1), max_features=500, vocabulary=["hello"])
+    if "transmited" in exec_features: 
+        exec_vectorizers["transmited"] = CountVectorizer(ngram_range=(1,1), max_features=500)
+        exec_vectorizers["transmited"].fit(raw_features["exec_features"]["transmited"]) 
  
-    exec_vectorizers["visited"] = GraphVectorizer()
+    if "visited" in exec_features: 
+        exec_vectorizers["visited"] = GraphVectorizer()
 
-    exec_vectorizers["insns"].fit(raw_features["insns"])
-    exec_vectorizers["syscalls"].fit(raw_features["syscalls"])
-    exec_vectorizers["transmited"].fit(raw_features["transmited"]) 
     #exec_vectorizers["reads"].fit(raw_features["reads"])
     #exec_vectorizers["writes"].fit(raw_features["writes"])
     #exec_vectorizers["allocs"].fit(raw_features["allocs"])
@@ -340,3 +351,36 @@ def init_vectorizers(raw_features):
     param_vectorizers["grr"] = GrrParamVectorizer()
 
     return exec_vectorizers, param_vectorizers
+
+def vectorize(x_train, option, features, verbose=0):
+  
+    data = []
+    exec_vectorizers, param_vectorizers = init_vectorizers(x_train)
+    if verbose > 0:
+        print exec_vectorizers
+        print param_vectorizers
+
+    exec_features = x_train["exec_features"] 
+    param_features =  x_train["param_features"]
+
+    for i in range(len(param_features)):
+       
+        v = []
+
+        for feature in features:
+            x = exec_features[feature][i]
+            vectorizer = exec_vectorizers[feature]
+            y = vectorizer.transform([x])
+            #print y.shape, 
+            v.append(y)
+        
+       
+        x = param_features[i]
+        if len(x) > 0:
+            vectorizer = param_vectorizers[option]        
+            y = vectorizer.transform([x])
+            #print y.shape
+            v.append(y)
+        data.append(np.concatenate(v, axis=1).flatten())
+
+    return data 

@@ -260,3 +260,27 @@ class ExecFeatures(Features):
         #with gzip.open(filename, 'a+') as csvfile:
         #    csvwriter = csv.writer(csvfile, delimiter=';')
         #    csvwriter.writerow(row)
+
+def select_features(x_train, features_to_select, verbose=0):
+   
+    data = dict()
+    data["exec_features"] = dict()
+    data["param_features"] = []
+
+
+    features_names = x_train[0]["exec_features"].keys()
+    for feature in features_names:
+        #if features == ["all"]:
+        #    continue
+        #if feature not in features_to_select:
+        #    del x_train[
+
+
+
+        if features == ["all"] or feature in features:
+            print "reading", feature
+            data[feature] = []
+            for x in x_train:
+                data[feature].append(x["exec_features"][feature])
+
+    return data

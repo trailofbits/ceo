@@ -36,7 +36,7 @@ def parse_arguments():
     parser.add_argument('--number', type=int, default=maxint,
                         help="Number of test cases to analyze")
 
-    parser.add_argument('--features', type=str, default="",
+    parser.add_argument('--features', type=str, default=None,
                         help="")
 
     parser.add_argument('--extraction-timeout', type=int, default=300,
@@ -93,7 +93,18 @@ if __name__ == '__main__':
         else:
             print "[-]", repr(option),"is invalid."
             exit(1)
-    
+
+    features = []
+    if args.features is None:
+        features = features_list
+    else:
+        for feature in args.features.split(","):
+            if feature in features_list:
+                features.append(feature)
+            else:
+                print "[-]", repr(feature),"is invalid."
+                exit(1)
+ 
     #print "[+] Testcases(s) loaded."
     #print "[+] Initilization storage at "+storage_dir
 
@@ -106,7 +117,7 @@ if __name__ == '__main__':
         exit(0)
 
     if mode == "stats":
-        stats(options, target_filename, cpus, storage=storage_dir, verbose=verbosity)
+        stats(options, features, target_filename, cpus, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "collect":

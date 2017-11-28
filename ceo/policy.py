@@ -93,23 +93,29 @@ class PredictivePolicy(Policy):
         return hash(x) in self.exec_features
  
     def join_features(self, option, (tid, pid)):
-        x = dict()
-        x["param_features"] = self.param_features[option][tid,pid]
-        x["exec_features"] = self.exec_features[tid]
-        return x
+        #x = dict()
+        #x["param_features"] = self.param_features[option][tid,pid]
+        #x["exec_features"] = self.exec_features[tid]
+        return  self.exec_features[tid], self.param_features[option][tid,pid]
 
-    def get_data(self):
+    def get_data(self, options, features):
         ret = dict()
 
-        for option in self.options:
+        for option in options:
 
-            X = []
+            X = dict()
+            X["exec_features"] = dict()
+            for feature in features:
+                X["exec_features"][feature] = []
+            X["param_features"] = []
             labels = []
             progs = []
 
             for ((tid,pid),label) in self.labels[option].items():
-                x = self.join_features(option, (tid,pid))
-                X.append(x)
+                execs, params = self.join_features(option, (tid,pid))
+                for feature in features:
+                    X["exec_features"][feature].append(execs[feature])
+                X["param_features"].append(params)
                 labels.append(label)
                 progs.append(self.testcases[tid].target_filename)
 
