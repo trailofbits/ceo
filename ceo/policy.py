@@ -8,8 +8,9 @@ from sklearn.externals import joblib
 from sklearn.semi_supervised import label_propagation
 
 from ceo.features  import ExecFeatures,ParamFeatures
-from ceo.vectorizer import TFIDFVectorizer, CountVectorizer, Sent2VecVectorizer
-from ceo.predictors import train_predictor
+#from ceo.vectorizer import TFIDFVectorizer, CountVectorizer, Sent2VecVectorizer
+#from ceo.predictors import train_predictor
+from ceo.sdict import Sdict 
 from ceo.labels import lbls
 
 class Policy(object):
@@ -104,22 +105,22 @@ class PredictivePolicy(Policy):
         for option in options:
 
             X = dict()
-            X["exec_features"] = dict()
+            #X["exec_features"] = dict()
             for feature in features:
-                X["exec_features"][feature] = []
-            X["param_features"] = []
+                X[feature] = []
+            X["params"] = []
             labels = []
             progs = []
 
             for ((tid,pid),label) in self.labels[option].items():
                 execs, params = self.join_features(option, (tid,pid))
                 for feature in features:
-                    X["exec_features"][feature].append(execs[feature])
-                X["param_features"].append(params)
+                    X[feature].append(execs[feature])
+                X["params"].append(params)
                 labels.append(label)
                 progs.append(self.testcases[tid].target_filename)
 
-            ret[option] = progs,X,labels
+            ret[option] = progs,Sdict(X),labels
 
         return ret
 

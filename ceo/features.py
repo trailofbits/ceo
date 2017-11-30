@@ -2,7 +2,7 @@ import csv
 import gzip
 import os
 
-features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs", "visited"]
+features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs", "visited", "transmited"]
 
 def analyze_insn(insn):
     if insn is None:
@@ -221,10 +221,12 @@ class ExecFeatures(Features):
         with gzip.open(dirname,'rb') as f:
             r = csv.DictReader(f, delimiter=';')
             for row in r:
-                if len(row) > 0:
+                if len(row) > 0:                    
                     self._features = row
 
     def get(self):
+        self._features["insns"] = self._features["insns"][-1048576:]
+        self._features["transmited"] = filter(lambda x: x.isalpha() or x == " ", self._features["transmited"])
         return self._features
 
     def save(self, filename):

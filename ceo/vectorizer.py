@@ -9,6 +9,7 @@ import csv
 import gzip
 
 from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import CountVectorizer as skCountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer as skTfidfVectorizer
 from sklearn.externals import joblib
@@ -32,123 +33,155 @@ class Vectorizer:
 
 
 def _tokenizer(s):
-    return filter(lambda x: x != '', s.split(" "))
+    return filter(lambda x: x != '' and len(x) <= 32, s.split(" "))
 
 
-class AFLParamVectorizer(Vectorizer):
+class AFLParamVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self):
+        self.vocabulary_ = dict()
+        self.vocabulary_["has_params"] = 0 
+
+    def fit(self, x, y=None):
         pass
 
-    def fit_transform(self, x):
-        return self._vectorizer.transform(x)
+    def fit_transform(self, x, y=None):
+        return self.transform(x)
 
-    def transform(self, x):
-        return np.array([x])
+    def transform(self, x, y=None):
+        arr = [[0]]*len(x)
+        return np.array(arr)
 
-class GrrParamVectorizer(Vectorizer):
+class GrrParamVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self):
         self.mutators = grr_mutators
 
-    def fit_transform(self, x):
-        return self._vectorizer.transform(x)
-
-    def transform(self, x):
-        x = x[0]
-        ret = []
-        
-        strings = self.mutators
-        v = [0]*len(strings)
-        v[strings.index(x["mutator"])] = 1
-        ret.extend(v)
-
-        return np.array([ret])
-
-
-class MCoreParamVectorizer(Vectorizer):
-    def __init__(self):
+    def fit(self, x, y=None):
         pass
 
-    def fit_transform(self, x):
-        return self._vectorizer.transform(x)
+    def fit_transform(self, x, y=None):
+        return self.transform(x)
 
-    def transform(self, x):
-        x = x[0]
-        #print "x",x
-        ret = []
+    def transform(self, xs, y=None):
+        arr = []
+        for x in xs:
+            ret = []
         
-        # TODO: use constants from tool.py
-        strings = ["random", "uncovered", "branchlimited"] 
-        v = [0]*len(strings)
-        v[strings.index(x["policy"])] = 1
-        ret.extend(v)
+            strings = self.mutators
+            v = [0]*len(strings)
+            v[strings.index(x["mutator"])] = 1
+            ret.extend(v)
+            arr.append(ret)
 
-        strings = ["sparse", "dense"]
-        v = [0]*len(strings)
-        v[strings.index(x["dist_symb_bytes"])] = 1
-        ret.extend(v)
+        return np.array(arr)
+
+
+class MCoreParamVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.vocabulary_ = dict()
+        i = 0
+
+        for x in manticore_policies:
+          self.vocabulary_["policy="+x] = i
+          i = i + 1
+
+        for x in manticore_dist_symb_bytes:
+          self.vocabulary_["dist_symb_bytes="+x] = i
+          i = i + 1
+
+        self.vocabulary_["rand_symb_bytes"] = i
+
+    def fit(self, x, y=None):
+        pass
+
+    def fit_transform(self, x, y=None):
+        return self.transform(x, y)
+
+    def transform(self, xs, y=None):
+        arr = []
  
-        ret.append(x["rand_symb_bytes"])
-        return np.array([ret])
+        for x in xs:
+            ret = []
+            #print "x",x   
+            # TODO: use constants from tool.py
+            strings = ["random", "uncovered", "branchlimited"] 
+            v = [0]*len(strings)
+            v[strings.index(x["policy"])] = 1
+            ret.extend(v)
+
+            strings = ["sparse", "dense"]
+            v = [0]*len(strings)
+            v[strings.index(x["dist_symb_bytes"])] = 1
+            ret.extend(v)
+ 
+            ret.append(x["rand_symb_bytes"])
+            arr.append(ret)
+ 
+        return np.array(arr)
 
 
-class GraphVectorizer(Vectorizer):
+class GraphVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self):
         pass
 
-    def fit(self, x):
+    def fit(self, x, y=None):
         pass
 
-    def transform(self, raw_edgess):
-        raw_edges = raw_edgess[0]
-        edges = []
-        for x in raw_edges.split(" "):
-            edges.append(x.split(","))
+    def fit_transform(self, x, y=None):
+        return self.transform(x, y)
 
-        H = nx.DiGraph()
+    def transform(self, gs, y=None):
+        m = []
+        for raw_edges in gs:
+            edges = []
+            for x in raw_edges.split(" "):
+                edges.append(x.split(","))
 
-        for (x,y) in edges:
-            H.add_edge(x,y)
+            H = nx.DiGraph()
+
+            for (x,y) in edges:
+                H.add_edge(x,y)
         
-        nnodes = H.number_of_nodes()
+            nnodes = H.number_of_nodes()
 
-        #pos=nx.nx_agraph.graphviz_layout(H)
-        #nx.draw(H)
-        #plt.show()
+            #pos=nx.nx_agraph.graphviz_layout(H)
+            #nx.draw(H)
+            #plt.show()
 
-        #print H.number_of_nodes()
-        #print nx.info(H)
-        """
-        pathlengths=[]
-        for v in H.nodes():
-            spl=nx.single_source_shortest_path_length(H,v)
-            for p in spl.values():
-                pathlengths.append(p)
+            #print H.number_of_nodes()
+            #print nx.info(H)
+            """
+            pathlengths=[]
+            for v in H.nodes():
+                spl=nx.single_source_shortest_path_length(H,v)
+                for p in spl.values():
+                    pathlengths.append(p)
 
-        dist={}
-        for p in pathlengths:
-            if p in dist:
-                dist[p]+= 1
-            else:
-                dist[p]= 1
+            dist={}
+            for p in pathlengths:
+                if p in dist:
+                    dist[p]+= 1
+                else:
+                    dist[p]= 1
 
-        u = [0]*1024
-        if nnodes > 0:
-            for i in range(1024):
-                if i in dist:
-                    u[i] = dist[i] / float(nnodes)
-        """
-        #print u 
-        v = nx.degree_histogram(H)
-        v = v[:18]
-        v = v + [0]*(18-len(v))
-        #del v[2]
-        #del v[0]
-        total = sum(v)
-        if total > 0:
-            for i,x in enumerate(v):
-                v[i] = x / float(total)  
-        #print v
-        return np.array([v])
+            u = [0]*1024
+            if nnodes > 0:
+                for i in range(1024):
+                    if i in dist:
+                        u[i] = dist[i] / float(nnodes)
+            """
+            #print u 
+            v = nx.degree_histogram(H)
+            v = v[:18]
+            v = v + [0]*(18-len(v))
+            #del v[2]
+            #del v[0]
+            total = sum(v)
+            if total > 0:
+                for i,x in enumerate(v):
+                    v[i] = x / float(total)  
+            m.append(v)
+            #print v
+        return np.array(m)
 
 class SeriesVectorizer(Vectorizer):
     def __init__(self):
@@ -183,22 +216,25 @@ class SeriesVectorizer(Vectorizer):
         
         
  
-
-class TFIDFVectorizer(Vectorizer):
+"""
+class TFIDFVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self, ngram_range, max_features, vocabulary=None):
         self._vectorizer = skTfidfVectorizer(ngram_range=ngram_range, max_features=max_features, 
                                           tokenizer=_tokenizer, lowercase=True,
                                           vocabulary=vocabulary, decode_error="replace")
 
-    def fit_transform(self, x):
-        return self._vectorizer.fit_transform(x)
+    def get_params(self, deep=True):
+        return self._vectorizer.get_params(deep)
 
-    def fit(self, x):
-        return self._vectorizer.fit(x)
+    def fit_transform(self, x, y=None):
+        return self._vectorizer.fit_transform(x, y).toarray()
 
-    def transform(self, x):
-        return self._vectorizer.transform(x).toarray()
-   
+    def fit(self, x, y=None):
+        return self._vectorizer.fit(x, y)
+
+    def transform(self, x, y=None):
+        return self._vectorizer.transform(x,y).toarray()
+
 class CountVectorizer(Vectorizer):
     def __init__(self, ngram_range, max_features, vocabulary=None):
         self._vectorizer = skCountVectorizer(ngram_range=ngram_range, max_features=max_features, 
@@ -213,6 +249,8 @@ class CountVectorizer(Vectorizer):
 
     def transform(self, x):
         return self._vectorizer.transform(x).toarray()
+
+"""
 
 class Sent2VecVectorizer(Vectorizer):
     def __init__(self, dims, ngrams):
@@ -282,76 +320,60 @@ class Sent2VecVectorizer(Vectorizer):
                 for x in X:
                     out_stream.write(x+' \n')
 
-def init_vectorizers(raw_features):
-    #filename = "boot.csv.gz"
-    exec_features = raw_features["exec_features"].keys()
-    #param_features = raw_features["param_features"].keys()
+def init_vectorizers(selected_features):
+    #if raw_features is not None:
+    #    exec_features = raw_features["exec_features"].keys()
 
-    exec_vectorizers = dict()
-    param_vectorizers = dict()
-    
-    #insns_idx = 1
-    #syscalls_idx = 2
-    #reads_idx = 3
-    #writes_idx = 4
-    #allocs_idx = 5
-    #deallocs_idx = 6
-
-    #programs = []
-    #insns = []
-    #syscalls = []
-    #csv.field_size_limit(sys.maxsize)
-    #raw_features = dict()
-
-    #for name in features_list:
-    #    raw_features[name] = []
-
-    """with gzip.open(filename, 'rb') as csvfile:
-        reader = csv.reader(csvfile, delimiter=';')
-        for row in reader:
-            #programs.append(row[program_idx]) 
-            raw_features["insns"].append(row[insns_idx])
-            raw_features["syscalls"].append(row[syscalls_idx]) 
-            #raw_features["reads"].append(map(int, row[reads_idx].split(","))) 
-            #raw_features["writes"].append(map(int, row[writes_idx].split(","))) 
-            #raw_features["allocs"].append(map(int, row[allocs_idx].split(","))) 
-            #raw_features["deallocs"].append(map(int, row[deallocs_idx].split(","))) 
-    """
-    #print raw_features
-    #assert(0)
+    #exec_vectorizers = dict()
+    #param_vectorizers = dict()
+    vectorizers = dict()
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
 
-    if "insns" in exec_features:
-        exec_vectorizers["insns"] = CountVectorizer(ngram_range=(2,2), max_features=500)
-        exec_vectorizers["insns"].fit(raw_features["exec_features"]["insns"])
-        print exec_vectorizers["insns"]._vectorizer.vocabulary_
+    if "insns" in selected_features:
+        vectorizers["insns"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500,
+                                                    tokenizer=_tokenizer, lowercase=True, use_idf=False,
+                                                    decode_error="replace")
 
-    if "syscalls" in exec_features:
-        exec_vectorizers["syscalls"] = TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
-        exec_vectorizers["syscalls"].fit(raw_features["exec_features"]["syscalls"])
+        #if raw_features is not None:
+        #    vectorizers["insns"].fit(raw_features["exec_features"]["insns"])
+        #    #print exec_vectorizers["insns"]._vectorizer.vocabulary_
+
+    if "syscalls" in selected_features:
+        vectorizers["syscalls"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500, 
+                                          tokenizer=_tokenizer, lowercase=True, use_idf=False,
+                                          vocabulary=syscalls, decode_error="replace")
+
+        #TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
+        #if raw_features is not None:
+        #    vectorizers["syscalls"].fit(raw_features["exec_features"]["syscalls"])
 
     #exec_vectorizers["reads"] = SeriesVectorizer() 
     #exec_vectorizers["writes"] = SeriesVectorizer() 
     #exec_vectorizers["allocs"] = SeriesVectorizer() 
     #exec_vectorizers["deallocs"] = SeriesVectorizer() 
-    if "transmited" in exec_features: 
-        exec_vectorizers["transmited"] = CountVectorizer(ngram_range=(1,1), max_features=500)
-        exec_vectorizers["transmited"].fit(raw_features["exec_features"]["transmited"]) 
+    if "transmited" in selected_features: 
+        vectorizers["transmited"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500,
+                                                    tokenizer=_tokenizer, lowercase=True,
+                                                    decode_error="replace")
+        #if raw_features is not None:
+        #    vectorizers["transmited"].fit(raw_features["exec_features"]["transmited"]) 
  
-    if "visited" in exec_features: 
-        exec_vectorizers["visited"] = GraphVectorizer()
+    if "visited" in selected_features: 
+        vectorizers["visited"] = GraphVectorizer()
 
     #exec_vectorizers["reads"].fit(raw_features["reads"])
     #exec_vectorizers["writes"].fit(raw_features["writes"])
     #exec_vectorizers["allocs"].fit(raw_features["allocs"])
     #exec_vectorizers["deallocs"].fit(raw_features["deallocs"])
 
-    param_vectorizers["afl"]  = AFLParamVectorizer()
-    param_vectorizers["mcore"] = MCoreParamVectorizer()
-    param_vectorizers["grr"] = GrrParamVectorizer()
+    vectorizers["afl"]  = AFLParamVectorizer()
+    vectorizers["mcore"] = MCoreParamVectorizer()
+    vectorizers["grr"] = GrrParamVectorizer()
 
-    return exec_vectorizers, param_vectorizers
+    return vectorizers #exec_vectorizers, param_vectorizers
 
+
+"""
 def vectorize(x_train, option, features, verbose=0):
   
     data = []
@@ -384,3 +406,4 @@ def vectorize(x_train, option, features, verbose=0):
         data.append(np.concatenate(v, axis=1).flatten())
 
     return data 
+"""

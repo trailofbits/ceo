@@ -10,7 +10,7 @@ from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.predictors import train_predictor #eval_rf, eval_svm, eval_knn
 from ceo.plot import plot_data
 from ceo.features import select_features
-from ceo.vectorizer import vectorize
+from ceo.vectorizer import init_vectorizers
 from ceo.labels import lbls
 
 def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
@@ -19,6 +19,8 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
     if cpus is None:
         cpus = 1
  
+    print "[+] Reading data"
+
     storages = []
     targetss = []
     prefixes = []
@@ -43,15 +45,13 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
             if n < 0:
                 continue
             count[n] = labels.count(n)
-            print label,n, count[n], count[n] / float(len(labels))
+            print label, count[n], count[n] / float(len(labels))
 
     #features = ["visited"]
     for option, (progs, X, labels) in data.items():
-        #X = select_features(X, features)
-        #print X["exec_features"]
-        data = vectorize(X, option, features)
-        plot_data(progs, data, labels, verbose=verbose)
-        #train_predictor(progs, X, labels, cpus, verbose=1)
+        plot_data(progs, option, X, labels, verbose=verbose) 
+    for option, (progs, X, labels) in data.items():
+        train_predictor(progs, option, X, labels, cpus, verbose=verbose)
     
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 
