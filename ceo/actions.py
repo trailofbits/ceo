@@ -11,11 +11,11 @@ from ceo.tools import afltmin_path, aflcmin_path, aflfuzz_path
 from ceo.labels import lbls
 from ceo.aflcmin import cmin
 from ceo.features import ExecFeatures, ParamFeatures
-from ceo.plugins import FeatureCollector, FeatureExtractor, StateCollector
+from ceo.plugins import FeatureCollector, FeatureExtractor, StateCollector, Abandonware
 from ceo.concrete_execution import make_initial_concrete_state 
 from ceo.symbolic_execution import make_initial_symbolic_state, reconstruct_concrete_file 
 
-from ceo.evm import ManticoreEVM
+#from ceo.evm import ManticoreEVM
 
 from ceo.parameters import ParametersExploreAFL, ParametersExploreMCore, ParametersExploreGrr
 
@@ -49,6 +49,7 @@ class FeaturesMCore(Action):
         features = ExecFeatures()
         m.register_plugin(FeatureCollector(features, 0.05))
         m.register_plugin(FeatureExtractor())
+        m.register_plugin(Abandonware())
         
         try:
             m.run(procs=procs, timeout=timeout)
@@ -180,6 +181,7 @@ class ExploreMCore(Action):
         #m.plugins = set() 
         Manticore.verbosity(verbose)
         m.register_plugin(StateCollector())
+        m.register_plugin(Abandonware()) 
 
         try:
             m.run(procs=procs, timeout=timeout)

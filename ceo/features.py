@@ -2,7 +2,7 @@ import csv
 import gzip
 import os
 
-features_list = ["syscalls", "insns", "reads", "writes", "allocs", "deallocs", "visited", "transmited"]
+features_list = ["syscalls", "insns", "visited", "transmited"]
 
 def analyze_insn(insn):
     if insn is None:
@@ -100,8 +100,8 @@ def mkfeatures_id(program, state_id):
 def mkfeatures_depth(depth):
     return depth + 1
 
-def find_program(state):
-    return state.platform._path
+#def find_program(state):
+#    return state.platform._path
 
 class Features(object):
     '''
@@ -154,8 +154,8 @@ class ExecFeatures(Features):
         features["visited"] = visited 
 
     def add_insns(self, state):
-        if self._program is None:
-            self._program = find_program(state)
+        #if self._program is None:
+        #    self._program = find_program(state)
 
         features = self._features
         insns = features.get("insns",[])

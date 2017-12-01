@@ -121,7 +121,7 @@ class MCoreParamVectorizer(BaseEstimator, TransformerMixin):
 
 class GraphVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self):
-        pass
+        self.vocabulary_ = dict() 
 
     def fit(self, x, y=None):
         pass
@@ -213,44 +213,6 @@ class SeriesVectorizer(Vectorizer):
 
         return np.array([v])
             
-        
-        
- 
-"""
-class TFIDFVectorizer(BaseEstimator, TransformerMixin):
-    def __init__(self, ngram_range, max_features, vocabulary=None):
-        self._vectorizer = skTfidfVectorizer(ngram_range=ngram_range, max_features=max_features, 
-                                          tokenizer=_tokenizer, lowercase=True,
-                                          vocabulary=vocabulary, decode_error="replace")
-
-    def get_params(self, deep=True):
-        return self._vectorizer.get_params(deep)
-
-    def fit_transform(self, x, y=None):
-        return self._vectorizer.fit_transform(x, y).toarray()
-
-    def fit(self, x, y=None):
-        return self._vectorizer.fit(x, y)
-
-    def transform(self, x, y=None):
-        return self._vectorizer.transform(x,y).toarray()
-
-class CountVectorizer(Vectorizer):
-    def __init__(self, ngram_range, max_features, vocabulary=None):
-        self._vectorizer = skCountVectorizer(ngram_range=ngram_range, max_features=max_features, 
-                                             tokenizer=_tokenizer, lowercase=True,
-                                             vocabulary=vocabulary, decode_error="replace")
-
-    def fit_transform(self, x):
-        return self._vectorizer.fit_transform(x)
-
-    def fit(self, x):
-        return self._vectorizer.fit(x)
-
-    def transform(self, x):
-        return self._vectorizer.transform(x).toarray()
-
-"""
 
 class Sent2VecVectorizer(Vectorizer):
     def __init__(self, dims, ngrams):

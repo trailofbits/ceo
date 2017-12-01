@@ -38,3 +38,10 @@ class StateCollector(Plugin):
 
     def will_fork_state_callback(self, state, expression, solutions, policy):
         self.manticore._executor.generate_testcase(state, "New forked state!")
+
+class Abandonware(Plugin):
+
+    def will_execute_instruction_callback(self, state, pc, insn):
+        name = state.cpu.canonicalize_instruction_name(insn)
+        if not hasattr(state.cpu, name):
+            state.abandon()
