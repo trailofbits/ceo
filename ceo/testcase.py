@@ -5,12 +5,18 @@ import hashlib
 from ceo.sampling import shuffle, stratified_shuffle
 from ceo.naughtystrings import naughty_strings
 
-def load_targets(filename):
+def load_targets(target_filename, target_blacklist):
     names = []
     paths = []
+    blacklist = []
+    if target_blacklist is not None:
+        for path in open(target_blacklist,"r").read().split("\n"):
+            if path != '':
+                blacklist.append(path)
 
-    for path in open(filename,"r").read().split("\n"):
-        if path != '':
+    for path in open(target_filename,"r").read().split("\n"):
+        blacklisted = any(map(lambda x: x in path, blacklist))
+        if path != '' and not blacklisted:
             paths.append(path)
             names.append(path.split("/")[-1])
 

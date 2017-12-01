@@ -9,10 +9,10 @@ from ceo.reduce  import reduce_inputs, reduce_testcase
 from ceo.extraction  import get_features
 #from ceo.storage  import init_storage
 
-def init(options, target_filename, cpus, storage="ceo", verbose=1):
+def init(options, target_filename, target_blacklist ,cpus, storage="ceo", verbose=1):
 
     #init_storage(storage)
-    names, paths = load_targets(target_filename)
+    names, paths = load_targets(target_filename, target_blacklist)
     print "[+] Initilization testcases"
     init_testcases(names, paths)
     print "[+] Available", len(paths), "to execute"

@@ -51,6 +51,9 @@ def parse_arguments():
     parser.add_argument('--storage', type=str, default="ceo",
                         help="A folder name to store the data.")
 
+    parser.add_argument('--blacklist', type=str, default=None,
+                        help="A list of targets to ignore.")
+
     parser.add_argument('--verbose', type=int, default=0,
                         help="Verbosity level")
 
@@ -58,7 +61,7 @@ def parse_arguments():
                         help="Target file containing one executable program per line")
 
     parser.add_argument('mode', type=str,
-                        help="Mode (init/collect/train/test/stats/plot)")
+                        help="Mode (init/collect/stats/stats)")
 
     parsed = parser.parse_args()
     return parsed
@@ -70,6 +73,8 @@ if __name__ == '__main__':
     all_options = ["afl", "mcore", "grr"]
     mode = args.mode
     target_filename = args.targets
+    target_blacklist = args.blacklist
+ 
     storage_dir = args.storage
     verbosity = args.verbose
     myseed = args.seed
@@ -109,7 +114,7 @@ if __name__ == '__main__':
     #print "[+] Initilization storage at "+storage_dir
 
     if mode == "init":
-        init(options, target_filename, cpus, storage=storage_dir, verbose=verbosity)
+        init(options, target_filename, target_blacklist, cpus, storage=storage_dir, verbose=verbosity)
         exit(0)
 
     if mode == "test":
