@@ -31,7 +31,7 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
             storages.append(x)
         if "fold" in x and target_filename in files:
             prefixes.append(x)
-            targetss.append(load_targets(x+"/"+target_filename))
+            targetss.append(load_targets(x+"/"+target_filename, None))
 
     #features = ["syscalls","visited"]
     policy = PredictivePolicy(options, storages)

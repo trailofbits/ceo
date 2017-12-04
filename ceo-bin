@@ -96,7 +96,7 @@ if __name__ == '__main__':
         if option in all_options:
             options.append(option)
         else:
-            print "[-]", repr(option),"is invalid."
+            print "[-] option", repr(option),"is invalid."
             exit(1)
 
     features = []
@@ -107,7 +107,7 @@ if __name__ == '__main__':
             if feature in features_list:
                 features.append(feature)
             else:
-                print "[-]", repr(feature),"is invalid."
+                print "[-] feature", repr(feature),"is invalid."
                 exit(1)
  
     #print "[+] Testcases(s) loaded."
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
     if mode == "collect":
 
-        names, paths = load_targets(target_filename)
+        names, paths = load_targets(target_filename, target_blacklist)
         print "[+] Initilization vectorizer(s) ..."
         policy = Storage(storage_dir, features_list, options)
         print "[+] Collecting data to train"

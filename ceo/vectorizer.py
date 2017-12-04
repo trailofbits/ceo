@@ -54,6 +54,9 @@ class AFLParamVectorizer(BaseEstimator, TransformerMixin):
 class GrrParamVectorizer(BaseEstimator, TransformerMixin):
     def __init__(self):
         self.mutators = grr_mutators
+        self.vocabulary_ = dict()
+        for i,mutator in enumerate(self.mutators):
+            self.vocabulary_[mutator] = i
 
     def fit(self, x, y=None):
         pass
@@ -316,7 +319,7 @@ def init_vectorizers(selected_features):
     if "transmited" in selected_features: 
         vectorizers["transmited"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500,
                                                     tokenizer=_tokenizer, lowercase=True,
-                                                    decode_error="replace")
+                                                    min_df=2, decode_error="replace")
         #if raw_features is not None:
         #    vectorizers["transmited"].fit(raw_features["exec_features"]["transmited"]) 
  
