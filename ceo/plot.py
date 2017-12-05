@@ -44,7 +44,6 @@ def plot_data(progs, option, X, y, verbose=0):
  
     cmap = ["green", "blue", "yellow", "red"]
     plt.figure(figsize=(10,10))
-    print len(X)
     for i in range(len(X)):
 
         x0 = X_reduced[i, 0]
@@ -57,7 +56,7 @@ def plot_data(progs, option, X, y, verbose=0):
         plt.scatter(x0, x1, c = color)
         plt.text(x0-0.01, x1+0.01, progs[i])
 
-    plt.savefig("plot.png", dpi=300)
+    plt.savefig("plot."+option+".png", dpi=300)
 
     #print X_reduced
     # len(x_train), len(y_train)

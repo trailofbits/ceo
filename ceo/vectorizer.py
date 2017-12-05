@@ -295,7 +295,7 @@ def init_vectorizers(selected_features):
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
 
     if "insns" in selected_features:
-        vectorizers["insns"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500,
+        vectorizers["insns"] = skCountVectorizer(ngram_range=(1,1), max_features=500,
                                                     tokenizer=_tokenizer, lowercase=True, use_idf=False,
                                                     decode_error="replace")
 

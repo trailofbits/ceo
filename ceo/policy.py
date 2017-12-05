@@ -139,6 +139,9 @@ class PredictivePolicy(Policy):
             progs = []
 
             for ((tid,pid),label) in self.labels[option].items():
+                if label == lbls['found']:
+                    # no enough crashes to predict!
+                    continue
                 execs, params = self.join_features(option, (tid,pid))
                 for feature in features:
                     X[feature].append(execs[feature])

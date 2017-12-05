@@ -54,8 +54,12 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
     if options != ["none"]:
         print "[+] Training predictors.."
         for option, (progs, X, labels) in data.items():
-            train_predictor(progs, option, X, labels, cpus, verbose=verbose)
-    
+            score, predictor = train_predictor(progs, option, X, labels, cpus, verbose=verbose)
+            print "Best classifier for", option, "is"
+            print predictor
+            print score
+ 
+ 
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 
     # auto CPU selection
