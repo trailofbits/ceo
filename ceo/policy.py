@@ -57,6 +57,19 @@ class PredictivePolicy(Policy):
                 assert(not (x in self.testcases))
                 self.testcases[x] = y
             #self.labels = 
+
+            for x, y, files in os.walk(storage+"/exec_features"):
+                for f in files:
+                    feature_filepath = x + "/".join(y) + "/" + f
+                    tid = int(f.split(".")[0])
+
+                    features = ExecFeatures()
+                    features.load(feature_filepath)
+                    self.exec_features[tid] = features.get() 
+
+            if self.options == ["none"]:
+                continue
+
             labels = joblib.load(open(storage+'/labels.pkl', 'rb'))
             for option in self.options:
                 for x,y in labels[option].items():
@@ -79,15 +92,6 @@ class PredictivePolicy(Policy):
                     self.param_features[option][(tid,pid)] = features.get() 
                     #print self.param_features[option][(tid,pid)] 
 
-            for x, y, files in os.walk(storage+"/exec_features"):
-                for f in files:
-                    feature_filepath = x + "/".join(y) + "/" + f
-                    tid = int(f.split(".")[0])
-
-                    features = ExecFeatures()
-                    features.load(feature_filepath)
-                    self.exec_features[tid] = features.get() 
-
     def __contains__(self, x):
         if self.exec_features is None:
             return False
@@ -102,12 +106,34 @@ class PredictivePolicy(Policy):
     def get_data(self, options, features):
         ret = dict()
 
+        # unlabeled data
+        if options == ["none"]:
+            X = dict()
+
+            for feature in features:
+                X[feature] = []
+
+            labels = None
+            progs = []
+
+            for tid,tc in self.testcases.items():
+                execs = self.exec_features[tid]
+                for feature in features:
+                    X[feature].append(execs[feature])
+ 
+                progs.append(tc.target_filename)
+
+            ret["none"] = progs,Sdict(X),None
+            return ret
+
+        # labeled data
         for option in options:
 
             X = dict()
             #X["exec_features"] = dict()
             for feature in features:
                 X[feature] = []
+
             X["params"] = []
             labels = []
             progs = []

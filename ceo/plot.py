@@ -17,7 +17,10 @@ def plot_data(progs, option, X, y, verbose=0):
 
     selected_features = X.keys()
     vectorizers = init_vectorizers(selected_features)
-    vectorizers["params"] = vectorizers[option]
+    
+    if option != "none":
+        vectorizers["params"] = vectorizers[option]
+
     print "[+] Reducing the dimensionality of the data to plot"
     reducer = Pipeline([
                 ('scaler', (StandardScaler(with_mean=True,with_std=False))),
@@ -41,17 +44,20 @@ def plot_data(progs, option, X, y, verbose=0):
  
     cmap = ["green", "blue", "yellow", "red"]
     plt.figure(figsize=(10,10))
-
+    print len(X)
     for i in range(len(X)):
 
         x0 = X_reduced[i, 0]
         x1 = X_reduced[i, 1]
         #print y[i]
-        plt.scatter(x0, x1, c = cmap[y[i]])
+        color = cmap[-1]
+        if option != "none": 
+            color = cmap[y[i]]
+        
+        plt.scatter(x0, x1, c = color)
         plt.text(x0-0.01, x1+0.01, progs[i])
-        plt.savefig("plot.png", dpi=300)
 
-    
+    plt.savefig("plot.png", dpi=300)
 
     #print X_reduced
     # len(x_train), len(y_train)

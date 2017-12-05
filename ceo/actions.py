@@ -167,6 +167,7 @@ class ExploreMCore(Action):
         #print self.crashes
         copy_and_rename(".", self.inputs, input_dir)
         copy_and_rename(".", self.crashes, crash_dir)
+        shutil.rmtree(self.workspace, True)
 
     def run(self, procs=1, timeout=600, verbose=0):
 
@@ -188,9 +189,8 @@ class ExploreMCore(Action):
         except AssertionError:
             return lbls['fail']
         
-        return self._check_output(m)
-
-
+        ret = self._check_output(m)
+        return ret
 
 class MinimizeInputsAFL(Action):
     '''
@@ -205,7 +205,11 @@ class MinimizeInputsAFL(Action):
 
     def run(self, procs=1, timeout=600, verbose=0):
 
-        ret = cmin(self.target_path, self.inputs_path, self.outputs_path, verbose=verbose)
+        try:
+            ret = cmin(self.target_path, self.inputs_path, self.outputs_path, verbose=verbose)
+        except: 
+            ret = False
+
         if ret:
             shutil.rmtree(self.inputs_path, True) 
             shutil.move(self.outputs_path, self.inputs_path) 

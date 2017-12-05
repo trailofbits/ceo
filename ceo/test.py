@@ -37,21 +37,24 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
     policy = PredictivePolicy(options, storages)
     data = policy.get_data(options,features)    
 
-    print "[+] Fraction of labels collected:"
-    for option, (progs, X, labels) in data.items():
-        count = dict()
-        print option
-        for label,n in lbls.items():
-            if n < 0:
-                continue
-            count[n] = labels.count(n)
-            print label, count[n], count[n] / float(len(labels))
+    if options != ["none"]:
+        print "[+] Fraction of labels collected:"
+        for option, (progs, X, labels) in data.items():
+            count = dict()
+            print option
+            for label,n in lbls.items():
+                if n < 0:
+                    continue
+                count[n] = labels.count(n)
+                print label, count[n], count[n] / float(len(labels))
 
     #features = ["visited"]
     for option, (progs, X, labels) in data.items():
         plot_data(progs, option, X, labels, verbose=verbose) 
-    for option, (progs, X, labels) in data.items():
-        train_predictor(progs, option, X, labels, cpus, verbose=verbose)
+    if options != ["none"]:
+        print "[+] Training predictors.."
+        for option, (progs, X, labels) in data.items():
+            train_predictor(progs, option, X, labels, cpus, verbose=verbose)
     
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
 

@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     options = []
     for option in args.options.split(","):
-        if option in all_options:
+        if option in all_options+["none"]:
             options.append(option)
         else:
             print "[-] option", repr(option),"is invalid."
@@ -135,9 +135,16 @@ if __name__ == '__main__':
         for _ in xrange(nsamples):
             name, path = choice(zip(names, paths))
             print "[+] Picked up", name
+
             if "afl" in options:
                 reduce_inputs(name+"/inputs", path, verbose=verbosity)
+
             testcases = load_testcases([name], [path])
+
+            if len(testcases) == 0:
+                print "[-] No test cases loaded for", name
+                continue
+             
             tc = choice(testcases)
 
             if "afl" in options:
