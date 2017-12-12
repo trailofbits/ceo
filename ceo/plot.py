@@ -20,6 +20,17 @@ def plot_data(progs, option, X, y, verbose=0):
     
     if option != "none":
         vectorizers["params"] = vectorizers[option]
+    else:
+        print len(progs), len(X)
+        count_progs = dict() 
+        for prog in set(progs):
+            count_progs[prog] = 0
+        for prog in progs:
+            count_progs[prog] = count_progs[prog] + 1
+
+        print count_progs.values()
+        print sum(count_progs.values())
+        #assert(0)
 
     print "[+] Reducing the dimensionality of the data to plot"
     reducer = Pipeline([
@@ -44,19 +55,23 @@ def plot_data(progs, option, X, y, verbose=0):
  
     cmap = ["green", "blue", "yellow", "red"]
     plt.figure(figsize=(10,10))
+    #plt.axis('off')
+    #plt.xticks([])
+    #plt.yticks([])
+
     for i in range(len(X)):
 
         x0 = X_reduced[i, 0]
         x1 = X_reduced[i, 1]
         #print y[i]
-        color = cmap[-1]
+        color = cmap[1]
         if option != "none": 
             color = cmap[y[i]]
         
         plt.scatter(x0, x1, c = color)
-        plt.text(x0-0.01, x1+0.01, progs[i])
+        #plt.text(x0-0.01, x1+0.01, progs[i])
 
-    plt.savefig("plot."+option+".png", dpi=300)
+    plt.savefig("plot."+option+".pdf", dpi=300, bbox_inches='tight')
 
     #print X_reduced
     # len(x_train), len(y_train)

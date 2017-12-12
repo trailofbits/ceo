@@ -100,7 +100,7 @@ if __name__ == '__main__':
             exit(1)
 
     features = []
-    if args.features is None:
+    if args.features is None or args.features == "all":
         features = features_list
     else:
         for feature in args.features.split(","):

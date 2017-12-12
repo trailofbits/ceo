@@ -186,6 +186,56 @@ class GraphVectorizer(BaseEstimator, TransformerMixin):
             #print v
         return np.array(m)
 
+
+from fastText import load_model
+ftmodel = load_model('/home/gustavo/data/wiki.en.bin')
+#ftwords = ftmodel.get_words()
+
+
+class SentVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.vocabulary_ = dict() 
+
+    def fit(self, x, y=None):
+        pass
+
+    def fit_transform(self, x, y=None):
+        return self.transform(x, y)
+
+    def transform(self, texts, y=None):
+        ret = []
+        for text in texts:
+
+            # parsing of some of the words we can find
+            words = set(map(str.lower, _tokenizer(text)))
+            for word in set(_tokenizer(text)):
+                for i,letter in enumerate(word):
+                    if i == len(word)-1:
+                        break
+                    if letter.islower() and word[i+1].isupper():
+                        words.add(str.lower(word[:i+1]))
+                        words.add(str.lower(word[i+1:]))
+
+            available_words = ftmodel.get_words()
+            acc = np.zeros(300)
+            fwords = set()
+            for word in words:
+                if word in available_words:
+                    fwords.add(word)
+
+            for word in fwords:
+                v = np.array(ftmodel.get_word_vector(word))
+                acc = acc + v
+
+            if len(fwords) > 0:
+                acc = acc / len(fwords)
+
+            ret.append(acc)
+ 
+        return np.array(ret)
+
+"""
+
 class SeriesVectorizer(Vectorizer):
     def __init__(self):
         self.ranges = [(0,0)]
@@ -215,7 +265,7 @@ class SeriesVectorizer(Vectorizer):
             v[i] = ys[k]
 
         return np.array([v])
-            
+"""
 
 class Sent2VecVectorizer(Vectorizer):
     def __init__(self, dims, ngrams):
@@ -286,50 +336,35 @@ class Sent2VecVectorizer(Vectorizer):
                     out_stream.write(x+' \n')
 
 def init_vectorizers(selected_features):
-    #if raw_features is not None:
-    #    exec_features = raw_features["exec_features"].keys()
-
-    #exec_vectorizers = dict()
-    #param_vectorizers = dict()
+    use_idf = False
+    normalizer = None
     vectorizers = dict()
     syscalls = ["_receive","_transmit", "_allocate", "_deallocate", "_fdwait","_terminate","_random"]
 
     if "insns" in selected_features:
-        vectorizers["insns"] = skCountVectorizer(ngram_range=(1,1), max_features=500,
-                                                    tokenizer=_tokenizer, lowercase=True, use_idf=False,
+        vectorizers["insns"] = skTfidfVectorizer(ngram_range=(3,3), max_features=500,
+                                                    tokenizer=_tokenizer, lowercase=False, norm=normalizer, use_idf=use_idf,
                                                     decode_error="replace")
 
-        #if raw_features is not None:
-        #    vectorizers["insns"].fit(raw_features["exec_features"]["insns"])
-        #    #print exec_vectorizers["insns"]._vectorizer.vocabulary_
-
     if "syscalls" in selected_features:
-        vectorizers["syscalls"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500, 
-                                          tokenizer=_tokenizer, lowercase=True, use_idf=False,
-                                          vocabulary=syscalls, decode_error="replace")
-
-        #TFIDFVectorizer(ngram_range=(1,1), max_features=500, vocabulary=syscalls)
-        #if raw_features is not None:
-        #    vectorizers["syscalls"].fit(raw_features["exec_features"]["syscalls"])
+        vectorizers["syscalls"] = skTfidfVectorizer(ngram_range=(3,3), max_features=500, 
+                                          tokenizer=_tokenizer, lowercase=False, norm=normalizer, use_idf=use_idf,
+                                          #vocabulary=syscalls, 
+                                          decode_error="replace")
 
     #exec_vectorizers["reads"] = SeriesVectorizer() 
     #exec_vectorizers["writes"] = SeriesVectorizer() 
     #exec_vectorizers["allocs"] = SeriesVectorizer() 
-    #exec_vectorizers["deallocs"] = SeriesVectorizer() 
-    if "transmited" in selected_features: 
-        vectorizers["transmited"] = skTfidfVectorizer(ngram_range=(1,1), max_features=500,
-                                                    tokenizer=_tokenizer, lowercase=True,
-                                                    min_df=2, decode_error="replace")
-        #if raw_features is not None:
-        #    vectorizers["transmited"].fit(raw_features["exec_features"]["transmited"]) 
+    #exec_vectorizers["deallocs"] = SeriesVectorizer()
  
+    if "transmited" in selected_features: 
+        vectorizers["transmited"] = SentVectorizer()
+                                     #skTfidfVectorizer(ngram_range=(1,1), max_features=500,
+                                     #               tokenizer=_tokenizer, lowercase=True, norm=normalizer, use_idf=use_idf,
+                                     #               min_df=2, decode_error="replace")
+
     if "visited" in selected_features: 
         vectorizers["visited"] = GraphVectorizer()
-
-    #exec_vectorizers["reads"].fit(raw_features["reads"])
-    #exec_vectorizers["writes"].fit(raw_features["writes"])
-    #exec_vectorizers["allocs"].fit(raw_features["allocs"])
-    #exec_vectorizers["deallocs"].fit(raw_features["deallocs"])
 
     vectorizers["afl"]  = AFLParamVectorizer()
     vectorizers["mcore"] = MCoreParamVectorizer()

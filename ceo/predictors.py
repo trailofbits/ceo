@@ -1,11 +1,11 @@
-from numpy import mean
+from numpy import array, mean, std
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import GroupKFold
-from sklearn.metrics import recall_score, confusion_matrix, classification_report
+from sklearn.metrics import recall_score, confusion_matrix, precision_recall_fscore_support, classification_report
 from sklearn.pipeline import Pipeline
 
 from imblearn.over_sampling import RandomOverSampler, SMOTE
@@ -25,19 +25,19 @@ def train_predictor(progs, option, x_train, y_train, cpus, verbose=0):
     params = []
   
 
-    for _ in range(5):
+    for _ in range(1):
         for train_index, test_index in GroupKFold( n_splits=10).split(x_train,y_train,progs):
             gkf.append((train_index, test_index))
 
 
-    #clf = make_features_pipeline(selected_features, vectorizers, SVC())
+    clf = make_features_pipeline(selected_features, vectorizers, SVC())
 
-    #parameters = [
+    parameters = [
     #{'C': [0.1, 1, 10, 100, 1000, 10000], 'kernel': ['linear'], 'class_weight':['balanced']},
-    #{'classifier__C': [0.1, 1, 10, 100, 1000, 10000], 'classifier__gamma': [0.1, 0.01, 0.001], 'classifier__kernel': ['rbf'], 'classifier__class_weight':['balanced']},
-    #]
-    #clfs.append(clf)
-    #params.append(parameters) 
+    {'classifier__C': [0.1, 1, 10, 100, 1000, 10000], 'classifier__gamma': [0.1, 0.01, 0.001], 'classifier__kernel': ['rbf'], 'classifier__class_weight':['balanced']},
+    ]
+    clfs.append(clf)
+    params.append(parameters) 
     
     clf = make_features_pipeline(selected_features, vectorizers, RandomForestClassifier())
 
@@ -74,5 +74,27 @@ def train_predictor(progs, option, x_train, y_train, cpus, verbose=0):
                 print "Feature importance:"
                 print best_estimator.named_steps["classifier"].feature_importances_
 
-    print option, map(lambda x: round(x,2), scores)
-    return best_score, best_estimator
+    recalls = []
+    for train_index, test_index in gkf:
+        my_train = []
+        my_test  = []
+
+        #print train_index.shape
+        mx_train = x_train.iloc[train_index]
+
+        for index in train_index:
+            my_train.append(y_train[index])
+
+        mx_test = x_train.iloc[test_index]
+
+        for index in test_index:
+            my_test.append(y_train[index])
+
+        best_estimator.fit(mx_train, my_train)
+        pred_test = best_estimator.predict(mx_test)
+        recalls.append(precision_recall_fscore_support(my_test,pred_test)[1])
+        print classification_report(my_test,pred_test)
+
+    print mean(array(recalls), axis=1)
+    print std(mean(array(recalls), axis=1)) #,option, map(lambda x: round(x,2), scores)
+    return best_score, mean(array(recalls), axis=0), best_estimator

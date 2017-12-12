@@ -48,16 +48,15 @@ def stats(options, features, target_filename, cpus, storage="ceo", verbose=0):
                 count[n] = labels.count(n)
                 print label, count[n], count[n] / float(len(labels))
 
-    #features = ["visited"]
-    for option, (progs, X, labels) in data.items():
-        plot_data(progs, option, X, labels, verbose=verbose) 
+    #for option, (progs, X, labels) in data.items():
+    #    plot_data(progs, option, X, labels, verbose=verbose) 
     if options != ["none"]:
         print "[+] Training predictors.."
         for option, (progs, X, labels) in data.items():
-            score, predictor = train_predictor(progs, option, X, labels, cpus, verbose=verbose)
+            avg_score, score_per_class, predictor = train_predictor(progs, option, X, labels, cpus, verbose=verbose)
             print "Best classifier for", option, "is"
-            print predictor
-            print score
+            print predictor.named_steps["classifier"]
+            print option, round(avg_score,2), map(lambda score: round(score, 2), score_per_class)
  
  
 def test(options, target_filename, cpus, extraction_timeout, storage="ceo", verbose=1):
